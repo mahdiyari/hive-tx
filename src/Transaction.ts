@@ -11,7 +11,7 @@ import { ByteBuffer } from './helpers/ByteBuffer'
 import { Serializer } from './helpers/serializer'
 import { sha256 } from '@noble/hashes/sha2.js'
 import { config } from './config'
-import { callRPC, RPCError } from './helpers/call'
+import { callRPC, callRPCBroadcast, RPCError } from './helpers/call'
 import { DigestData } from './types'
 import { sleep } from './helpers/sleep'
 
@@ -115,7 +115,7 @@ export class Transaction {
       )
     }
     try {
-      await callRPC('condenser_api.broadcast_transaction', [this.transaction])
+      await callRPCBroadcast('condenser_api.broadcast_transaction', [this.transaction])
     } catch (e) {
       if (e instanceof RPCError && e.message.includes('Duplicate transaction check failed')) {
         // ignore duplicate transaction error as this can happen when we retry the broadcast

@@ -1,10 +1,8 @@
 import { config } from '../config'
 import { APIMethods, APIPaths, CallResponse } from '../types'
+import { sleep } from './sleep'
 
-let rpcIndex = 0
-let restIndex = 0
-let rpcTries = 0
-let restTries = 0
+// ── Error Types ─────────────────────────────────────────────────────────────
 
 export class RPCError extends Error {
   name = 'RPCError'
@@ -20,15 +18,97 @@ export class RPCError extends Error {
   }
 }
 
-/** shoudRetry is false by default - i.e. no retry
- * on true, retry one more time
+/** Errors that indicate the request definitely never reached the server. */
+const PRE_CONNECTION_ERRORS = ['ECONNREFUSED', 'ENOTFOUND', 'EHOSTUNREACH', 'EAI_AGAIN']
+
+/** Check if an error is a pre-connection error (request never reached server). */
+function isPreConnectionError(e: any): boolean {
+  if (!e) return false
+  const msg = String(e.message || e.cause?.code || '')
+  return PRE_CONNECTION_ERRORS.some((code) => msg.includes(code))
+}
+
+// ── Node Health Tracker ─────────────────────────────────────────────────────
+
+interface NodeHealth {
+  consecutiveFailures: number
+  lastFailureTime: number
+  rateLimitedUntil: number
+}
+
+class NodeHealthTracker {
+  private health = new Map<string, NodeHealth>()
+
+  private getOrCreate(node: string): NodeHealth {
+    let h = this.health.get(node)
+    if (!h) {
+      h = { consecutiveFailures: 0, lastFailureTime: 0, rateLimitedUntil: 0 }
+      this.health.set(node, h)
+    }
+    return h
+  }
+
+  recordSuccess(node: string): void {
+    const h = this.getOrCreate(node)
+    h.consecutiveFailures = 0
+  }
+
+  recordFailure(node: string): void {
+    const h = this.getOrCreate(node)
+    h.consecutiveFailures++
+    h.lastFailureTime = Date.now()
+  }
+
+  recordRateLimit(node: string, retryAfterMs = 10_000): void {
+    const h = this.getOrCreate(node)
+    h.rateLimitedUntil = Date.now() + retryAfterMs
+    h.consecutiveFailures++
+    h.lastFailureTime = Date.now()
+  }
+
+  isNodeHealthy(node: string): boolean {
+    const h = this.health.get(node)
+    if (!h) return true // unknown nodes assumed healthy
+
+    // Rate-limited and cooldown hasn't expired
+    if (h.rateLimitedUntil > Date.now()) return false
+
+    // Too many consecutive failures within the last 30 seconds
+    if (h.consecutiveFailures >= 3 && Date.now() - h.lastFailureTime < 30_000) return false
+
+    return true
+  }
+
+  /** Return nodes sorted: healthy first (preserving order), unhealthy appended. */
+  getOrderedNodes(nodes: string[]): string[] {
+    const healthy: string[] = []
+    const unhealthy: string[] = []
+    for (const node of nodes) {
+      if (this.isNodeHealthy(node)) {
+        healthy.push(node)
+      } else {
+        unhealthy.push(node)
+      }
+    }
+    return [...healthy, ...unhealthy]
+  }
+}
+
+const rpcHealthTracker = new NodeHealthTracker()
+const restHealthTracker = new NodeHealthTracker()
+
+// ── Internal helpers ────────────────────────────────────────────────────────
+
+/**
+ * Low-level JSON-RPC call to a single node. No failover.
+ * @param shouldRetry - If true, retries once on the same node for transient errors.
  */
 const jsonRPCCall = async (
   url: string,
   method: string,
   params: any,
   timeout = config.timeout,
-  shoudRetry = false
+  shouldRetry = false
 ) => {
   const id = Math.floor(Math.random() * 100_000_000)
   const body = {
@@ -44,6 +124,19 @@ const jsonRPCCall = async (
       headers: { 'Content-Type': 'application/json' },
       signal: AbortSignal.timeout(timeout)
     })
+
+    // Handle HTTP-level errors before parsing JSON
+    if (res.status === 429) {
+      const retryAfter = res.headers.get('Retry-After')
+      const cooldownMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : 10_000
+      rpcHealthTracker.recordRateLimit(url, cooldownMs)
+      throw new Error(`HTTP 429 Rate Limited by ${url}`)
+    }
+    if (res.status === 503) {
+      rpcHealthTracker.recordFailure(url)
+      throw new Error(`HTTP 503 Service Unavailable from ${url}`)
+    }
+
     const result = (await res.json()) as CallResponse
     if (
       !result ||
@@ -51,7 +144,7 @@ const jsonRPCCall = async (
       result.id !== id ||
       result.jsonrpc !== '2.0'
     ) {
-      throw new Error('JSONRPC id missmatch')
+      throw new Error('JSONRPC id mismatch')
     }
     if ('result' in result) {
       return result.result
@@ -69,26 +162,35 @@ const jsonRPCCall = async (
     if (e instanceof RPCError) {
       throw e
     }
-    if (shoudRetry) {
+    if (shouldRetry) {
       return jsonRPCCall(url, method, params, timeout, false)
     }
     throw e
   }
 }
 
+/** Small jitter delay between failover attempts to prevent thundering herd. */
+function jitterDelay(): Promise<void> {
+  return sleep(50 + Math.random() * 50)
+}
+
+// ── Public API: callRPC ─────────────────────────────────────────────────────
+
 /**
  * Makes API calls to Hive blockchain nodes with automatic retry and failover support.
- * Automatically switches between multiple nodes.
+ * Uses per-request retry counters, node health tracking, jitter between retries,
+ * and HTTP status awareness (429 rate limiting, 503).
  *
- * The method supports JSON-RPC 2.0 protocol used by Hive API nodes.
- * If the current node fails, it will automatically try the next node in the list.
+ * If the current node fails, it will automatically try the next healthy node.
+ * RPCErrors (valid blockchain rejections) are never retried.
  *
  * @param method - The API method name (e.g., 'condenser_api.get_accounts')
  * @param params - Parameters for the API method as array or object
  * @param timeout - Request timeout in milliseconds (default: config.timeout)
- * @param retry - Number of retry attempts before throwing an error (default: config.retry)
+ * @param retry - Maximum number of retry attempts (default: config.retry)
  * @returns Promise resolving to the API response
- * @throws Error if all retry attempts fail or on RPCError
+ * @throws {RPCError} On blockchain-level errors (bad params, missing authority, etc.)
+ * @throws {Error} If all retry attempts fail
  *
  * @example
  * ```typescript
@@ -98,7 +200,7 @@ const jsonRPCCall = async (
  * const accounts = await callRPC('condenser_api.get_accounts', [['alice']])
  *
  * // Custom timeout and retry settings
- * const data = await callRPC('condenser_api.get_content', ['alice', 'test-post'], 10_000, 8)
+ * const data = await callRPC('condenser_api.get_content', ['alice', 'test-post'], 10_000, 5)
  * ```
  */
 export const callRPC = async <T = any>(
@@ -110,23 +212,81 @@ export const callRPC = async <T = any>(
   if (!Array.isArray(config.nodes)) {
     throw new Error('config.nodes is not an array')
   }
-  const node = config.nodes[rpcIndex]
-  try {
-    const res = await jsonRPCCall(node, method, params, timeout)
-    return res as T
-  } catch (e: any) {
-    // Throw on actual RPC errors
-    if (e instanceof RPCError) {
-      throw e
+  const orderedNodes = rpcHealthTracker.getOrderedNodes(config.nodes)
+  let lastError: any
+
+  for (let attempt = 0; attempt <= retry && attempt < orderedNodes.length; attempt++) {
+    const node = orderedNodes[attempt]
+    try {
+      const res = await jsonRPCCall(node, method, params, timeout)
+      rpcHealthTracker.recordSuccess(node)
+      return res as T
+    } catch (e: any) {
+      // RPCErrors are valid blockchain rejections - never retry
+      if (e instanceof RPCError) {
+        throw e
+      }
+      rpcHealthTracker.recordFailure(node)
+      lastError = e
+
+      // Add jitter before trying next node
+      if (attempt < retry && attempt < orderedNodes.length - 1) {
+        await jitterDelay()
+      }
     }
-    rpcTries++
-    if (rpcTries > retry) {
-      throw e
-    }
-    changeRPCNode()
-    return callRPC(method, params, timeout, retry)
   }
+
+  throw lastError
 }
+
+// ── Public API: callRPC for broadcasts ──────────────────────────────────────
+
+/**
+ * Broadcast-safe RPC call. Only retries on pre-connection errors where the
+ * request definitively never reached the server (ECONNREFUSED, ENOTFOUND, etc.).
+ * On timeouts, HTTP errors, or any ambiguous failure, throws immediately to
+ * prevent double-broadcasting transactions.
+ *
+ * @internal Used by Transaction.broadcast()
+ */
+export const callRPCBroadcast = async <T = any>(
+  method: string,
+  params: any[] | object = [],
+  timeout = config.timeout
+): Promise<T> => {
+  if (!Array.isArray(config.nodes)) {
+    throw new Error('config.nodes is not an array')
+  }
+  const orderedNodes = rpcHealthTracker.getOrderedNodes(config.nodes)
+  let lastError: any
+
+  for (let attempt = 0; attempt < orderedNodes.length; attempt++) {
+    const node = orderedNodes[attempt]
+    try {
+      const res = await jsonRPCCall(node, method, params, timeout)
+      rpcHealthTracker.recordSuccess(node)
+      return res as T
+    } catch (e: any) {
+      // RPCErrors are valid blockchain rejections - never retry
+      if (e instanceof RPCError) {
+        throw e
+      }
+      rpcHealthTracker.recordFailure(node)
+      lastError = e
+
+      // Only retry broadcasts on pre-connection errors where the request
+      // definitely never reached the server. On timeouts or HTTP errors,
+      // the server may have received and processed the transaction.
+      if (!isPreConnectionError(e)) {
+        throw e
+      }
+    }
+  }
+
+  throw lastError
+}
+
+// ── Public API: callREST ────────────────────────────────────────────────────
 
 const apiMethods: Record<APIMethods, string> = {
   balance: '/balance-api',
@@ -170,10 +330,7 @@ type ParamsForEndpoint<T> = SafePathParams<T> & SafeQueryParams<T> extends undef
 
 /**
  * Makes REST API calls to Hive blockchain REST endpoints with automatic retry and failover support.
- * Automatically switches between multiple REST nodes and handles path/query parameter processing.
- *
- * This function provides type-safe access to various Hive REST APIs including balance, hafah, hafbe,
- * hivemind, hivesense, reputation, nft-tracker, hafsql, and status APIs.
+ * Uses per-request retry counters, node health tracking, and timeout support.
  *
  * @template Api - The REST API method type (e.g., 'balance', 'hafah', 'hivemind', etc.)
  * @template P - The endpoint path type for the specified API
@@ -194,11 +351,6 @@ type ParamsForEndpoint<T> = SafePathParams<T> & SafeQueryParams<T> extends undef
  * // Get account balance
  * const balance = await callREST('balance', '/accounts/{account-name}/balances', { "account-name": 'alice' })
  *
- * const data = await callREST('balance', '/accounts/{account-name}/aggregated-history', {
- *  'account-name': 'mahdiyari',
- *  'coin-type': 'HBD'
- * })
- *
  * // Custom timeout and retry settings
  * const data = await callREST('status', '/status', undefined, 10_000, 3)
  * ```
@@ -213,49 +365,72 @@ export async function callREST<Api extends APIMethods, P extends keyof APIPaths[
   if (!Array.isArray(config.restNodes)) {
     throw new Error('config.restNodes is not an array')
   }
-  const node = config.restNodes[restIndex]
-  const baseUrl = node + apiMethods[api]
-  let path = endpoint as string
-  const paramObj = params || ({} as Record<string, any>)
-  const processedPathParams = new Set<string>()
+  const orderedNodes = restHealthTracker.getOrderedNodes(config.restNodes)
+  let lastError: any
 
-  // Replace path params ONLY
-  Object.entries(paramObj).forEach(([key, value]) => {
-    if (path.includes(`{${key}}`)) {
-      path = path.replace(`{${key}}`, encodeURIComponent(String(value)))
-      processedPathParams.add(key)
-    }
-  })
-  const url = new URL(baseUrl + path)
-  // Add ONLY remaining params as query (if any)
-  Object.entries(paramObj).forEach(([key, value]) => {
-    if (!processedPathParams.has(key)) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => url.searchParams.append(key, String(v)))
-      } else {
-        url.searchParams.set(key, String(value))
+  for (let attempt = 0; attempt <= retry && attempt < orderedNodes.length; attempt++) {
+    const node = orderedNodes[attempt]
+    const baseUrl = node + apiMethods[api]
+    let path = endpoint as string
+    const paramObj = params || ({} as Record<string, any>)
+    const processedPathParams = new Set<string>()
+
+    // Replace path params ONLY
+    Object.entries(paramObj).forEach(([key, value]) => {
+      if (path.includes(`{${key}}`)) {
+        path = path.replace(`{${key}}`, encodeURIComponent(String(value)))
+        processedPathParams.add(key)
+      }
+    })
+    const url = new URL(baseUrl + path)
+    // Add ONLY remaining params as query (if any)
+    Object.entries(paramObj).forEach(([key, value]) => {
+      if (!processedPathParams.has(key)) {
+        if (Array.isArray(value)) {
+          value.forEach((v) => url.searchParams.append(key, String(v)))
+        } else {
+          url.searchParams.set(key, String(value))
+        }
+      }
+    })
+
+    try {
+      const response = await fetch(url.toString(), {
+        signal: AbortSignal.timeout(timeout)
+      })
+      if (response.status === 404) {
+        throw new Error('HTTP 404 - Hint: can happen on wrong params')
+      }
+      if (response.status === 429) {
+        const retryAfter = response.headers.get('Retry-After')
+        const cooldownMs = retryAfter ? parseInt(retryAfter, 10) * 1000 : 10_000
+        restHealthTracker.recordRateLimit(node, cooldownMs)
+        throw new Error(`HTTP 429 Rate Limited by ${node}`)
+      }
+      if (response.status === 503) {
+        restHealthTracker.recordFailure(node)
+        throw new Error(`HTTP 503 Service Unavailable from ${node}`)
+      }
+      restHealthTracker.recordSuccess(node)
+      return response.json() as any
+    } catch (e: any) {
+      // 404 is not a node issue, don't failover
+      if (e?.message?.includes('HTTP 404')) {
+        throw e
+      }
+      restHealthTracker.recordFailure(node)
+      lastError = e
+
+      if (attempt < retry && attempt < orderedNodes.length - 1) {
+        await jitterDelay()
       }
     }
-  })
-  let response
-  try {
-    response = await fetch(url.toString())
-    if (response?.status === 404) {
-      throw new Error(`HTTP 404 - Hint: can happen on wrong params`)
-    }
-    return response.json() as any
-  } catch (e) {
-    if (response?.status === 404) {
-      throw e
-    }
-    restTries++
-    if (restTries > retry) {
-      throw e
-    }
-    changeRESTNode()
-    return callREST(api, endpoint, params, timeout, retry)
   }
+
+  throw lastError
 }
+
+// ── Public API: callWithQuorum ───────────────────────────────────────────────
 
 /**
  * Make a JSONRPC call with quorum. The method will cross-check the result
@@ -318,20 +493,8 @@ function findConsensus(results: any[], quorum: number) {
     }
     resultGroups.get(key)!.push(result)
   }
-  const consensusGroup = Array.from(resultGroups.values()).find((group) => group.length >= quorum)
+  const consensusGroup = Array.from(resultGroups.values()).find(
+    (group) => group.length >= quorum
+  )
   return consensusGroup ? consensusGroup[0] : null
-}
-
-const changeRPCNode = (newNodeIndex = rpcIndex + 1) => {
-  if (newNodeIndex > config.nodes.length - 1) {
-    newNodeIndex = 0
-  }
-  rpcIndex = newNodeIndex
-}
-
-const changeRESTNode = (newNodeIndex = restIndex + 1) => {
-  if (newNodeIndex > config.restNodes.length - 1) {
-    newNodeIndex = 0
-  }
-  restIndex = newNodeIndex
 }
