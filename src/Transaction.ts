@@ -129,19 +129,26 @@ export class Transaction {
     if (!checkStatus) {
       return { tx_id: this.txId, status: 'unknown' }
     }
+    // Poll until the transaction reaches a final state or max attempts exceeded.
+    // With 60 attempts: delays grow from 1.3s to 19s, total wait ~10 minutes.
+    const maxPollAttempts = 60
     await sleep(1000)
     let status = await this.checkStatus()
     let i = 1
     while (
       status?.status !== 'within_irreversible_block' &&
       status?.status !== 'expired_irreversible' &&
-      status?.status !== 'too_old'
+      status?.status !== 'too_old' &&
+      i < maxPollAttempts
     ) {
       await sleep(1000 + i * 300)
       status = await this.checkStatus()
       i++
     }
-    return { tx_id: this.txId, status: status.status }
+    return {
+      tx_id: this.txId,
+      status: (status?.status ?? 'unknown') as BroadcastResult['status']
+    }
   }
 
   /**
