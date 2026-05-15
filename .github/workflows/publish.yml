@@ -28,8 +28,10 @@ jobs:
           node-version: 22
           registry-url: 'https://registry.npmjs.org'
 
-      - name: Update npm (OIDC support)
+      - name: npm bug workaround
         run: npm install -g promise-retry
+
+      - name: Update npm (OIDC support)
         run: npm install -g npm@latest
 
       - run: npm ci --legacy-peer-deps
