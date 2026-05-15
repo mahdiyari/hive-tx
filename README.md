@@ -5,10 +5,9 @@
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/mahdiyari/hive-tx/blob/master/LICENSE)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.9-blue.svg)](https://www.typescriptlang.org/)
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green.svg)](https://nodejs.org/)
+[![Bundlejs](https://deno.bundlejs.com/badge?q=hive-tx@latest)](https://bundlejs.com/?q=hive-tx@latest)
 
 The most lightweight library for Hive blockchain while being a complete library. Regularly maintained to support the latest features of the blockchain. For Web and NodeJS.
-
-Library size: ~29KB minified+gzipped (including all the dependencies)
 
 ## Comprehensive Documentation
 
