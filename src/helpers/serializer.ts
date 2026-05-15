@@ -1,8 +1,8 @@
-import { PublicKey } from './PublicKey'
-import { Asset } from './Asset'
-import { HexBuffer } from './HexBuffer'
-import { ByteBuffer } from './ByteBuffer'
-import { Operation } from '../types'
+import { PublicKey } from './PublicKey.js'
+import { Asset } from './Asset.js'
+import { HexBuffer } from './HexBuffer.js'
+import { ByteBuffer } from './ByteBuffer.js'
+import { Operation } from '../types.js'
 
 // Operation ID constants for better maintainability
 const OPERATION_IDS = {

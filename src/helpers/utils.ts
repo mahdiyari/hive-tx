@@ -1,6 +1,6 @@
-import { Serializer } from './serializer'
-import { ByteBuffer } from './ByteBuffer'
-import { PublicKey } from './PublicKey'
+import { Serializer } from './serializer.js'
+import { ByteBuffer } from './ByteBuffer.js'
+import { PublicKey } from './PublicKey.js'
 import { bytesToHex } from '@noble/hashes/utils.js'
 
 export interface WitnessProps {

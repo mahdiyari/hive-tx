@@ -1,5 +1,5 @@
-import { Asset } from './helpers/Asset'
-import { PublicKey } from './helpers/PublicKey'
+import { Asset } from './helpers/Asset.js'
+import { PublicKey } from './helpers/PublicKey.js'
 
 // Asset types
 export type AssetSymbol = 'HIVE' | 'HBD' | 'VESTS' | 'STEEM' | 'SBD' | 'TESTS' | 'TBD'
@@ -508,15 +508,15 @@ export interface DigestData {
   txId: string
 }
 
-import type { paths as balancePaths } from './type_generators/types/balance'
-import type { paths as hafahPaths } from './type_generators/types/hafah'
-import type { paths as hafbePaths } from './type_generators/types/hafbe'
-import type { paths as hivemindPaths } from './type_generators/types/hivemind'
-import type { paths as hivesensePaths } from './type_generators/types/hivesense'
-import type { paths as reputationPaths } from './type_generators/types/reputation'
-import type { paths as nfttrackerPaths } from './type_generators/types/nft-tracker'
-import type { paths as hafsqlPaths } from './type_generators/types/hafsql'
-import type { paths as statusPaths } from './type_generators/types/status'
+import type { paths as balancePaths } from './type_generators/types/balance.js'
+import type { paths as hafahPaths } from './type_generators/types/hafah.js'
+import type { paths as hafbePaths } from './type_generators/types/hafbe.js'
+import type { paths as hivemindPaths } from './type_generators/types/hivemind.js'
+import type { paths as hivesensePaths } from './type_generators/types/hivesense.js'
+import type { paths as reputationPaths } from './type_generators/types/reputation.js'
+import type { paths as nfttrackerPaths } from './type_generators/types/nft-tracker.js'
+import type { paths as hafsqlPaths } from './type_generators/types/hafsql.js'
+import type { paths as statusPaths } from './type_generators/types/status.js'
 
 export type APIMethods =
   | 'balance'

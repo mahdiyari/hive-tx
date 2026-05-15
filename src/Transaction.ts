@@ -1,19 +1,19 @@
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
-import { PrivateKey } from './helpers/PrivateKey'
+import { PrivateKey } from './helpers/PrivateKey.js'
 import {
   OperationName,
   OperationBody,
   TransactionType,
   TransactionStatus,
   BroadcastResult
-} from './types'
-import { ByteBuffer } from './helpers/ByteBuffer'
-import { Serializer } from './helpers/serializer'
+} from './types.js'
+import { ByteBuffer } from './helpers/ByteBuffer.js'
+import { Serializer } from './helpers/serializer.js'
 import { sha256 } from '@noble/hashes/sha2.js'
-import { config } from './config'
-import { callRPC, RPCError } from './helpers/call'
-import { DigestData } from './types'
-import { sleep } from './helpers/sleep'
+import { config } from './config.js'
+import { callRPC, RPCError } from './helpers/call.js'
+import { DigestData } from './types.js'
+import { sleep } from './helpers/sleep.js'
 
 const chainId = hexToBytes(config.chain_id)
 

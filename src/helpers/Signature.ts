@@ -1,4 +1,4 @@
-import { PublicKey } from './PublicKey'
+import { PublicKey } from './PublicKey.js'
 import { secp256k1 } from '@noble/curves/secp256k1.js'
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
 

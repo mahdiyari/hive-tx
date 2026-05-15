@@ -1,5 +1,5 @@
-import { ByteBuffer } from './ByteBuffer'
-import { PublicKey } from './PublicKey'
+import { ByteBuffer } from './ByteBuffer.js'
+import { PublicKey } from './PublicKey.js'
 
 const PublicKeyDeserializer = (buf: ByteBuffer) => {
   const c = fixedBuf(buf, 33)
