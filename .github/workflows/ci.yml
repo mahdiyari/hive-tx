@@ -26,7 +26,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps --omit optional
+        run: npm ci --legacy-peer-deps
 
       - name: Run build
         run: npm run build
@@ -54,7 +54,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps --omit optional
+        run: npm ci --legacy-peer-deps
 
       - name: Check formatting
         run: npx prettier --check 'src/**/*.{js,ts}'
@@ -74,7 +74,7 @@ jobs:
           cache: 'npm'
 
       - name: Install dependencies
-        run: npm ci --legacy-peer-deps --omit optional
+        run: npm ci --legacy-peer-deps
 
       - name: Run security audit
         run: npm audit --audit-level=moderate

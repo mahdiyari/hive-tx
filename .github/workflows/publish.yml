@@ -30,7 +30,7 @@ jobs:
 
       - name: Update npm
         run: npm install -g npm@latest
-      - run: npm ci --legacy-peer-deps --omit optional
+      - run: npm ci --legacy-peer-deps
       - run: npm test
       - run: npm publish
 
