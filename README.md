@@ -33,13 +33,15 @@ The library has two build outputs:
 - ES Module (esm)
 - CommonJS (cjs)
 
-Your application will automatically pick the right build for your environment but you can also import either of them directly from `hive-tx/esm` and `hive-tx/cjs`.
+Your application will automatically pick the right build for your environment through package exports.
 
-There is also a browser build which you can use like this:
+For browser usage, load the ESM build directly:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/hive-tx@7/dist/browser/hive-tx.min.js"></script>
-<!-- hiveTx will be available globally -->
+<script type="module">
+  import { Transaction, PrivateKey } from 'https://cdn.jsdelivr.net/npm/hive-tx@7/dist/index.mjs'
+  // use Transaction / PrivateKey here
+</script>
 ```
 
 ## Quick Usage Examples
@@ -195,7 +197,7 @@ config.timeout = 10_000 // milliseconds
 - Added `callREST()` with full typing for new REST APIs
 - Added tests including operation tests to keep them up to date with hived
 - Added docs/EXAMPLES.md and docs/QUICKSTART.md
-- Output 3 builds: ESM, CJS, UMD minified .js for browser
+- Output 2 builds in `dist`: ESM (`index.mjs`) and CJS (`index.cjs`)
 
 ## License
 

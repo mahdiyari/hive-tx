@@ -5,18 +5,21 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <meta http-equiv="X-UA-Compatible" content="ie=edge" />
-  <script src="https://cdn.jsdelivr.net/npm/hive-tx@7/dist/browser/hive-tx.min.js"></script>
+  <script type="module">
+    import { Transaction, PrivateKey, config } from 'https://cdn.jsdelivr.net/npm/hive-tx@7/dist/index.mjs'
+    window.hiveTx = hiveTx
+  </script>
   <title>Test hive-tx</title>
 </head>
 
 <body>
   <script>
     // change api
-    hiveTx.config.nodes = ['https://rpc.mahdiyari.info']
+    config.nodes = ['https://rpc.mahdiyari.info']
     const myKey = '5JRaypasxMx1L97ZUX7YuC5Psb5EAbF821kkAGtBj7xCJFQcbLg'
-    const privateKey = hiveTx.PrivateKey.from(myKey)
+    const privateKey = PrivateKey.from(myKey)
 
-    const tx = new hiveTx.Transaction()
+    const tx = new Transaction()
 
     // create transaction
     tx.addOperation('vote',
