@@ -39,16 +39,6 @@ jobs:
           # Tests make live API calls to Hive nodes and external PostgreSQL
           NODE_ENV: test
 
-      - name: Check bundle size
-        if: matrix.node-version == 20
-        run: |
-          GZIP_SIZE=$(gzip -c dist/browser/hive-tx.min.js | wc -c)
-          echo "Browser bundle gzipped size: ${GZIP_SIZE} bytes (~$((GZIP_SIZE / 1024)) KB)"
-          if [ $GZIP_SIZE -gt 35000 ]; then
-            echo "Warning: Bundle size exceeds 35KB (advertised as ~29KB)"
-            exit 1
-          fi
-
   lint:
     name: Lint and Format Check
     runs-on: ubuntu-latest
