@@ -29,7 +29,8 @@ jobs:
           registry-url: 'https://registry.npmjs.org'
 
       - name: Update npm (OIDC support)
-        run: npm install -g npm@11
+        run: npm install -g promise-retry
+        run: npm install -g npm@latest
 
       - run: npm ci --legacy-peer-deps
       - run: npm test
