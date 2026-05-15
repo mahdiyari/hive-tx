@@ -13,7 +13,7 @@ jobs:
 
     strategy:
       matrix:
-        node-version: [20, 22, 24]
+        node-version: [22]
 
     steps:
       - name: Checkout code
@@ -34,7 +34,7 @@ jobs:
       - name: Run tests
         run: npm test
         timeout-minutes: 5
-        continue-on-error: ${{ matrix.node-version != 20 }}
+        continue-on-error: false
         env:
           # Tests make live API calls to Hive nodes and external PostgreSQL
           NODE_ENV: test
@@ -50,7 +50,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
@@ -70,7 +70,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 22
           cache: 'npm'
 
       - name: Install dependencies
