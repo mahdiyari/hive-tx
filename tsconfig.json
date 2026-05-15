@@ -1,13 +1,14 @@
 {
+  "$schema": "https://www.schemastore.org/tsconfig",
+  "_version": "24.0.0",
   "compilerOptions": {
-    "target": "ES2020",
-    "lib": ["ES2020"],
-    "module": "ES2020",
-    "moduleResolution": "node",
+    "lib": ["es2024", "ESNext.Array", "ESNext.Collection", "ESNext.Iterator", "ESNext.Promise"],
+    "module": "nodenext",
+    "target": "es2024",
     "strict": true,
     "esModuleInterop": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "moduleResolution": "node16"
   },
-  "include": ["src/**/*"],
   "exclude": ["src/type_generators/*.ts"]
 }

@@ -1,6 +1,6 @@
 {
   "name": "hive-tx",
-  "version": "7.0.2",
+  "version": "7.1.0",
   "description": "Lightweight and complete TypeScript SDK for Hive blockchain operations. Create, sign, and broadcast transactions with full type safety, cryptographic utilities, and serialization support. Features multi-signature transactions, memo encryption, automatic retry/failover, and comprehensive TypeScript definitions.",
   "author": "Mahdi Yari",
   "license": "MIT",
@@ -8,29 +8,21 @@
   "sideEffects": false,
   "exports": {
     ".": {
-      "import": "./dist/esm/index.js",
-      "require": "./dist/cjs/index.js"
+      "import": "./dist/index.mjs",
+      "require": "./dist/index.cjs"
     },
-    "./esm": "./dist/esm/index.js",
-    "./cjs": "./dist/cjs/index.js"
+    "./package.json": "./package.json"
   },
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "browser": "./dist/browser/hive-tx.min.js",
-  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/index.cjs",
+  "module": "./dist/index.mjs",
+  "types": "./dist/index.d.cts",
   "files": [
-    "dist",
-    "CHANGELOG.md"
+    "dist"
   ],
   "scripts": {
-    "build": "npm run build:clean && npm run build:node && npm run build:browser && npm run format",
-    "build:node": "npm run build:esm && npm run build:cjs",
-    "build:esm": "tsc -p tsconfig.esm.json",
-    "build:cjs": "tsc -p tsconfig.cjs.json",
-    "build:browser": "webpack",
-    "build:clean": "rm -rf dist",
+    "build": "npm run format && tsdown",
     "format": "prettier --write 'src/**/*.{js,ts}'",
-    "test": "npm run build:esm && tsx tests/test.ts",
+    "test": "npm run build && tsx tests/test.ts",
     "test:more": "npx nve 20,22,23,24,25 npm test",
     "generate:types": "tsx src/type_generators/index.ts && npm run format",
     "prepublishOnly": "npm run build"
@@ -64,20 +56,18 @@
   "dependencies": {
     "@noble/ciphers": "^2.2.0",
     "@noble/curves": "^2.2.0",
-    "@noble/hashes": "^2.0.1",
+    "@noble/hashes": "^2.2.0",
     "bs58": "6.0.0"
   },
   "devDependencies": {
-    "@types/node": "^24.12.3",
+    "@tsconfig/node-lts": "^24.0.0",
+    "@types/node": "^24.12.4",
     "@types/pg": "^8.20.0",
     "openapi-typescript": "^7.13.0",
     "pg": "^8.20.0",
     "prettier": "^3.8.3",
-    "terser-webpack-plugin": "^5.6.0",
-    "ts-loader": "^9.5.7",
-    "tsx": "^4.21.0",
-    "typescript": "^5.9.3",
-    "webpack": "^5.106.2",
-    "webpack-cli": "^6.0.1"
+    "tsdown": "^0.22.0",
+    "tsx": "^4.22.0",
+    "typescript": "^6.0.3"
   }
 }

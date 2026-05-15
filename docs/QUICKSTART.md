@@ -17,13 +17,15 @@ The library has two build outputs:
 - ES Module (esm)
 - CommonJS (cjs)
 
-Your application will automatically pick the right build for your environment but you can also import either of them directly from `hive-tx/esm` and `hive-tx/cjs`.
+Your application will automatically pick the right build for your environment through package exports.
 
-There is also a browser build which you can use like this:
+For browser usage, load the ESM build directly:
 
 ```html
-<script src="https://cdn.jsdelivr.net/npm/hive-tx@7/dist/browser/hive-tx.min.js"></script>
-<!-- hiveTx will be available globally -->
+<script type="module">
+  import { Transaction, PrivateKey } from 'https://cdn.jsdelivr.net/npm/hive-tx@7/dist/index.mjs'
+  // use Transaction / PrivateKey here
+</script>
 ```
 
 ## Creating Transactions

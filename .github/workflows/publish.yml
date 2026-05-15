@@ -30,7 +30,7 @@ jobs:
 
       - name: Update npm
         run: npm install -g npm@latest
-      - run: npm ci
+      - run: npm ci --force
       - run: npm test
       - run: npm publish
 

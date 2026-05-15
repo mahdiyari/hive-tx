@@ -1,9 +1,9 @@
-import { ByteBuffer } from './ByteBuffer'
+import { ByteBuffer } from './ByteBuffer.js'
 import { cbc as AESCBC } from '@noble/ciphers/aes.js'
 import { secp256k1 } from '@noble/curves/secp256k1.js'
 import { sha256, sha512 } from '@noble/hashes/sha2.js'
-import { PrivateKey } from './PrivateKey'
-import { PublicKey } from './PublicKey'
+import { PrivateKey } from './PrivateKey.js'
+import { PublicKey } from './PublicKey.js'
 
 export const encrypt = (
   privateKey: PrivateKey,

@@ -1,8 +1,8 @@
 import bs58 from 'bs58'
 import { secp256k1 } from '@noble/curves/secp256k1.js'
 import { sha256, sha512 } from '@noble/hashes/sha2.js'
-import { PublicKey } from './PublicKey'
-import { Signature } from './Signature'
+import { PublicKey } from './PublicKey.js'
+import { Signature } from './Signature.js'
 import { bytesToHex, hexToBytes } from '@noble/hashes/utils.js'
 
 export type KeyRole = 'owner' | 'active' | 'posting' | 'memo'

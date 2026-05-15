@@ -1,5 +1,5 @@
-import { config } from '../config'
-import { APIMethods, APIPaths, CallResponse } from '../types'
+import { config } from '../config.js'
+import { APIMethods, APIPaths, CallResponse } from '../types.js'
 
 let rpcIndex = 0
 let restIndex = 0

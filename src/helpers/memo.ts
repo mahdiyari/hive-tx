@@ -1,10 +1,10 @@
 import bs58 from 'bs58'
-import { ByteBuffer } from './ByteBuffer'
-import { Serializer } from './serializer'
-import { PrivateKey } from './PrivateKey'
-import * as Aes from './aes'
-import { PublicKey } from './PublicKey'
-import { Deserializer } from './deserializer'
+import { ByteBuffer } from './ByteBuffer.js'
+import { Serializer } from './serializer.js'
+import { PrivateKey } from './PrivateKey.js'
+import * as Aes from './aes.js'
+import { PublicKey } from './PublicKey.js'
+import { Deserializer } from './deserializer.js'
 
 export type Memo = {
   /**
