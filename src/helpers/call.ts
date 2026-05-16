@@ -28,7 +28,7 @@ const jsonRPCCall = async (
   method: string,
   params: any,
   timeout = config.timeout,
-  shoudRetry = false
+  shouldRetry = false
 ) => {
   const id = Math.floor(Math.random() * 100_000_000)
   const body = {
@@ -51,7 +51,7 @@ const jsonRPCCall = async (
       result.id !== id ||
       result.jsonrpc !== '2.0'
     ) {
-      throw new Error('JSONRPC id missmatch')
+      throw new Error('JSONRPC id mismatch')
     }
     if ('result' in result) {
       return result.result
@@ -69,7 +69,7 @@ const jsonRPCCall = async (
     if (e instanceof RPCError) {
       throw e
     }
-    if (shoudRetry) {
+    if (shouldRetry) {
       return jsonRPCCall(url, method, params, timeout, false)
     }
     throw e
@@ -113,6 +113,7 @@ export const callRPC = async <T = any>(
   const node = config.nodes[rpcIndex]
   try {
     const res = await jsonRPCCall(node, method, params, timeout)
+    rpcTries = 0
     return res as T
   } catch (e: any) {
     // Throw on actual RPC errors
@@ -239,7 +240,10 @@ export async function callREST<Api extends APIMethods, P extends keyof APIPaths[
   })
   let response
   try {
-    response = await fetch(url.toString())
+    response = await fetch(url.toString(), {
+      signal: AbortSignal.timeout(timeout)
+    })
+    restTries = 0
     if (response?.status === 404) {
       throw new Error(`HTTP 404 - Hint: can happen on wrong params`)
     }
