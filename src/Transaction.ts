@@ -132,6 +132,7 @@ export class Transaction {
     await sleep(1000)
     let status = await this.checkStatus()
     let i = 1
+    const expiration = new Date(this.transaction?.expiration).getTime()
     while (
       status?.status !== 'within_irreversible_block' &&
       status?.status !== 'expired_irreversible' &&
@@ -140,6 +141,9 @@ export class Transaction {
       await sleep(1000 + i * 300)
       status = await this.checkStatus()
       i++
+      if (Date.now() >= expiration) {
+        return { tx_id: this.txId, status: 'unknown' }
+      }
     }
     return { tx_id: this.txId, status: status.status }
   }
