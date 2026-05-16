@@ -240,7 +240,9 @@ export async function callREST<Api extends APIMethods, P extends keyof APIPaths[
   })
   let response
   try {
-    response = await fetch(url.toString())
+    response = await fetch(url.toString(), {
+      signal: AbortSignal.timeout(timeout)
+    })
     restTries = 0
     if (response?.status === 404) {
       throw new Error(`HTTP 404 - Hint: can happen on wrong params`)
