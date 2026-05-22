@@ -58,7 +58,11 @@ const jsonRPCCall = async (
     }
     if ('error' in result) {
       const e = result.error
-      if ('message' in e && 'code' in e) {
+      if (
+        'message' in e &&
+        'code' in e &&
+        !e.message.toLowerCase().includes('Unable to send request to endpoint'.toLowerCase())
+      ) {
         throw new RPCError(e)
       }
       throw result.error
