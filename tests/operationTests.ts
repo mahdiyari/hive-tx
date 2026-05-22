@@ -1,6 +1,6 @@
 import { bytesToHex } from '@noble/hashes/utils.js'
 import { Transaction, utils } from 'hive-tx'
-import { getTransactionHex } from './getTransactionHex'
+import { getTransactionHex } from './getTransactionHex.js'
 import { Client } from 'pg'
 
 // Test public key
