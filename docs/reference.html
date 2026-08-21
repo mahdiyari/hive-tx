@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>API reference — hive-tx</title>
+  <meta name="description" content="This page lists public exports. TypeScript files in dist give full types.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="reference">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <a class="brand" href="index.html">hive-tx <small>v7</small></a>
+    <div class="top-actions">
+      <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
+      <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
+    </div>
+  </header>
+  <div class="shell">
+    <aside id="nav"><label>Start</label>
+<a href="index.html" data-page="index">Overview</a>
+<a href="install.html" data-page="install">Install</a>
+<a href="start.html" data-page="start">Quick start</a>
+<a href="examples.html" data-page="examples">Examples</a>
+<label>Use</label>
+<a href="transactions.html" data-page="transactions">Transactions</a>
+<a href="keys.html" data-page="keys">Keys</a>
+<a href="memo.html" data-page="memo">Memos</a>
+<a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="config.html" data-page="config">Configuration</a>
+<a href="utils.html" data-page="utils">Utilities</a>
+<label>Reference</label>
+<a href="environments.html" data-page="environments">Environments</a>
+<a href="migrate.html" data-page="migrate">Migration from v6</a>
+<a href="reference.html" data-page="reference" class="current">API reference</a></aside>
+    <main id="main">
+      <article>
+        <p class="kicker">Reference</p>
+        <h1>API reference</h1>
+        <p class="lead">This page lists public exports. TypeScript files in dist give full types.</p>
+        
+<h2>Exports</h2>
+<pre><code>import {
+  Transaction,
+  PrivateKey,
+  PublicKey,
+  Signature,
+  Memo,
+  callRPC,
+  callREST,
+  callWithQuorum,
+  config,
+  utils
+} from 'hive-tx'</code></pre>
+<h2>Transaction</h2>
+<table>
+  <thead><tr><th>Member</th><th>Type</th></tr></thead>
+  <tbody>
+    <tr><td><code>constructor(options?)</code></td><td><code>{ transaction?, expiration? }</code></td></tr>
+    <tr><td><code>addOperation(name, body)</code></td><td><code>Promise&lt;void&gt;</code></td></tr>
+    <tr><td><code>sign(keys)</code></td><td><code>PrivateKey | PrivateKey[]</code> → <code>TransactionType</code></td></tr>
+    <tr><td><code>broadcast(checkStatus?)</code></td><td><code>Promise&lt;BroadcastResult&gt;</code></td></tr>
+    <tr><td><code>digest()</code></td><td><code>{ digest: Uint8Array, txId: string }</code></td></tr>
+    <tr><td><code>addSignature(hex)</code></td><td>130-character hex string</td></tr>
+    <tr><td><code>checkStatus()</code></td><td><code>Promise&lt;TransactionStatus&gt;</code></td></tr>
+    <tr><td><code>transaction</code></td><td><code>TransactionType | undefined</code></td></tr>
+    <tr><td><code>expiration</code></td><td>milliseconds, default 60000</td></tr>
+  </tbody>
+</table>
+<h2>BroadcastResult</h2>
+<pre><code>{
+  tx_id: string
+  status: 'unknown' | 'within_irreversible_block' | 'expired_irreversible' | 'too_old'
+}</code></pre>
+<h2>callRPC</h2>
+<p><code>callRPC(method, params?, timeout?, retry?): Promise&lt;T&gt;</code></p>
+<h2>callWithQuorum</h2>
+<p><code>callWithQuorum(method, params?, quorum?): Promise&lt;T&gt;</code></p>
+<h2>callREST</h2>
+<p><code>callREST(api, endpoint, params?, timeout?, retry?): Promise&lt;...&gt;</code></p>
+<h2>Memo</h2>
+<p><code>Memo.encode(privateKey, publicKey, memo): string</code></p>
+<p><code>Memo.decode(privateKey, memo): string</code></p>
+<h2>Operation names</h2>
+<p>TypeScript accepts Hive operation names as the first argument of <code>addOperation</code>. The body type matches the name. Common names:</p>
+<ul>
+  <li><code>vote</code>, <code>comment</code>, <code>delete_comment</code>, <code>comment_options</code></li>
+  <li><code>transfer</code>, <code>transfer_to_vesting</code>, <code>withdraw_vesting</code></li>
+  <li><code>custom_json</code>, <code>custom</code></li>
+  <li><code>delegate_vesting_shares</code>, <code>claim_reward_balance</code></li>
+  <li><code>account_update</code>, <code>account_update2</code>, <code>account_create</code></li>
+  <li><code>account_witness_vote</code>, <code>account_witness_proxy</code></li>
+  <li><code>recurrent_transfer</code>, <code>witness_update</code>, <code>witness_set_properties</code></li>
+</ul>
+<p>The full list is in <code>src/types.ts</code>.</p>
+<h2>Support</h2>
+<p>Use the Hive Discord server. The channel is <code>#dev-chat</code>.</p>
+
+        <p class="footer-note">hive-tx is MIT licensed.</p>
+      </article>
+    </main>
+  </div>
+  <script src="assets/site.js"></script>
+</body>
+</html>

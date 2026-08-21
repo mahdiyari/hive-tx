@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Install hive-tx — hive-tx</title>
+  <meta name="description" content="Add hive-tx to a Node.js project or load the ESM file in a browser.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="install">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <a class="brand" href="index.html">hive-tx <small>v7</small></a>
+    <div class="top-actions">
+      <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
+      <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
+    </div>
+  </header>
+  <div class="shell">
+    <aside id="nav"><label>Start</label>
+<a href="index.html" data-page="index">Overview</a>
+<a href="install.html" data-page="install" class="current">Install</a>
+<a href="start.html" data-page="start">Quick start</a>
+<a href="examples.html" data-page="examples">Examples</a>
+<label>Use</label>
+<a href="transactions.html" data-page="transactions">Transactions</a>
+<a href="keys.html" data-page="keys">Keys</a>
+<a href="memo.html" data-page="memo">Memos</a>
+<a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="config.html" data-page="config">Configuration</a>
+<a href="utils.html" data-page="utils">Utilities</a>
+<label>Reference</label>
+<a href="environments.html" data-page="environments">Environments</a>
+<a href="migrate.html" data-page="migrate">Migration from v6</a>
+<a href="reference.html" data-page="reference">API reference</a></aside>
+    <main id="main">
+      <article>
+        <p class="kicker">Install</p>
+        <h1>Install hive-tx</h1>
+        <p class="lead">Add hive-tx to a Node.js project or load the ESM file in a browser.</p>
+        
+<h2>Node.js</h2>
+<p>Node.js 20 or later is required.</p>
+<ol class="steps">
+  <li>Open a terminal in the project directory.</li>
+  <li>Install the package.</li>
+</ol>
+<pre><code>npm install hive-tx --save</code></pre>
+<p>You can use pnpm or yarn. The package name is <code>hive-tx</code>.</p>
+<h2>Import the library</h2>
+<p>Use an ESM import:</p>
+<pre><code>import { Transaction, PrivateKey, callRPC } from 'hive-tx'</code></pre>
+<p>Use a CommonJS require:</p>
+<pre><code>const { Transaction, PrivateKey, callRPC } = require('hive-tx')</code></pre>
+<p>Use hive-tx 7.2.1 or later for CommonJS. Version 7.2.0 CommonJS is not valid.</p>
+<h2>Browser</h2>
+<p>Load the ESM build from a CDN:</p>
+<pre><code>&lt;script type="module"&gt;
+  import { Transaction, PrivateKey } from
+    'https://cdn.jsdelivr.net/npm/hive-tx@7/dist/index.mjs'
+&lt;/script&gt;</code></pre>
+<h2>What the package contains</h2>
+<table>
+  <thead><tr><th>File</th><th>Use</th></tr></thead>
+  <tbody>
+    <tr><td><code>dist/index.mjs</code></td><td>ESM for Node.js, browsers, workers, and serverless runtimes</td></tr>
+    <tr><td><code>dist/index.cjs</code></td><td>CommonJS for Node.js and CommonJS bundlers</td></tr>
+    <tr><td><code>dist/index.d.mts</code></td><td>TypeScript types for ESM</td></tr>
+    <tr><td><code>dist/index.d.cts</code></td><td>TypeScript types for CommonJS</td></tr>
+  </tbody>
+</table>
+<p>The application selects the correct file through the <code>exports</code> field in <code>package.json</code>.</p>
+
+        <p class="footer-note">hive-tx is MIT licensed.</p>
+      </article>
+    </main>
+  </div>
+  <script src="assets/site.js"></script>
+</body>
+</html>

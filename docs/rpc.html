@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>RPC and REST calls — hive-tx</title>
+  <meta name="description" content="callRPC, callREST, and callWithQuorum send requests to Hive nodes.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="rpc">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <a class="brand" href="index.html">hive-tx <small>v7</small></a>
+    <div class="top-actions">
+      <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
+      <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
+    </div>
+  </header>
+  <div class="shell">
+    <aside id="nav"><label>Start</label>
+<a href="index.html" data-page="index">Overview</a>
+<a href="install.html" data-page="install">Install</a>
+<a href="start.html" data-page="start">Quick start</a>
+<a href="examples.html" data-page="examples">Examples</a>
+<label>Use</label>
+<a href="transactions.html" data-page="transactions">Transactions</a>
+<a href="keys.html" data-page="keys">Keys</a>
+<a href="memo.html" data-page="memo">Memos</a>
+<a href="rpc.html" data-page="rpc" class="current">RPC and REST</a>
+<a href="config.html" data-page="config">Configuration</a>
+<a href="utils.html" data-page="utils">Utilities</a>
+<label>Reference</label>
+<a href="environments.html" data-page="environments">Environments</a>
+<a href="migrate.html" data-page="migrate">Migration from v6</a>
+<a href="reference.html" data-page="reference">API reference</a></aside>
+    <main id="main">
+      <article>
+        <p class="kicker">Use</p>
+        <h1>RPC and REST calls</h1>
+        <p class="lead">callRPC, callREST, and callWithQuorum send requests to Hive nodes.</p>
+        
+<h2>callRPC</h2>
+<p><code>callRPC</code> sends a JSON-RPC 2.0 request. The function returns the result. The function throws <code>RPCError</code> for a Hive RPC error.</p>
+<pre><code>import { callRPC } from 'hive-tx'
+
+const accounts = await callRPC('condenser_api.get_accounts', [['alice']])
+const props = await callRPC('condenser_api.get_dynamic_global_properties')</code></pre>
+<p>Parameters:</p>
+<table>
+  <thead><tr><th>Name</th><th>Default</th><th>Function</th></tr></thead>
+  <tbody>
+    <tr><td><code>method</code></td><td>required</td><td>API method name</td></tr>
+    <tr><td><code>params</code></td><td><code>[]</code></td><td>Array or object</td></tr>
+    <tr><td><code>timeout</code></td><td><code>config.timeout</code></td><td>Timeout in milliseconds</td></tr>
+    <tr><td><code>retry</code></td><td><code>config.retry</code></td><td>Retry count after a network failure</td></tr>
+  </tbody>
+</table>
+<p>If a node does not respond, the library selects the next URL in <code>config.nodes</code>.</p>
+<p>Hive API names are in the Hive developer documentation.</p>
+<h2>callWithQuorum</h2>
+<p><code>callWithQuorum</code> sends the same method to more than one node. The function returns a result only if that number of nodes give the same JSON.</p>
+<pre><code>import { callWithQuorum } from 'hive-tx'
+
+const accounts = await callWithQuorum(
+  'condenser_api.get_accounts',
+  [['alice']],
+  2
+)</code></pre>
+<p>The default quorum is 2. The quorum must be less than or equal to <code>config.nodes.length</code>.</p>
+<div class="callout note">
+  <strong>Note</strong>
+  Quorum is JSON equality. Quorum is not a check of head-block lag. Do not change <code>config.nodes</code> during concurrent calls.
+</div>
+<h2>callREST</h2>
+<p><code>callREST</code> calls a REST API on <code>config.restNodes</code>. Not all public nodes have REST APIs.</p>
+<pre><code>import { callREST } from 'hive-tx'
+
+const balance = await callREST(
+  'balance',
+  '/accounts/{account-name}/balances',
+  { 'account-name': 'alice' }
+)</code></pre>
+<p>API names:</p>
+<ul>
+  <li><code>balance</code></li>
+  <li><code>hafah</code></li>
+  <li><code>hafbe</code></li>
+  <li><code>hivemind</code></li>
+  <li><code>hivesense</code></li>
+  <li><code>reputation</code></li>
+  <li><code>nft-tracker</code></li>
+  <li><code>hafsql</code></li>
+  <li><code>status</code></li>
+</ul>
+<p>A path parameter uses <code>{name}</code> in the path. Other fields become query parameters. TypeScript checks path names for each API.</p>
+<h2>RPCError</h2>
+<p><code>RPCError</code> has <code>message</code>, <code>code</code>, and optional <code>data</code>.</p>
+
+        <p class="footer-note">hive-tx is MIT licensed.</p>
+      </article>
+    </main>
+  </div>
+  <script src="assets/site.js"></script>
+</body>
+</html>

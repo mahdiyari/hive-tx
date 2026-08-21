@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Migration from v6 — hive-tx</title>
+  <meta name="description" content="Version 7 is a TypeScript rewrite. Some names and units changed.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="migrate">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <a class="brand" href="index.html">hive-tx <small>v7</small></a>
+    <div class="top-actions">
+      <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
+      <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
+    </div>
+  </header>
+  <div class="shell">
+    <aside id="nav"><label>Start</label>
+<a href="index.html" data-page="index">Overview</a>
+<a href="install.html" data-page="install">Install</a>
+<a href="start.html" data-page="start">Quick start</a>
+<a href="examples.html" data-page="examples">Examples</a>
+<label>Use</label>
+<a href="transactions.html" data-page="transactions">Transactions</a>
+<a href="keys.html" data-page="keys">Keys</a>
+<a href="memo.html" data-page="memo">Memos</a>
+<a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="config.html" data-page="config">Configuration</a>
+<a href="utils.html" data-page="utils">Utilities</a>
+<label>Reference</label>
+<a href="environments.html" data-page="environments">Environments</a>
+<a href="migrate.html" data-page="migrate" class="current">Migration from v6</a>
+<a href="reference.html" data-page="reference">API reference</a></aside>
+    <main id="main">
+      <article>
+        <p class="kicker">Reference</p>
+        <h1>Migration from v6</h1>
+        <p class="lead">Version 7 is a TypeScript rewrite. Some names and units changed.</p>
+        
+<table>
+  <thead><tr><th>v6</th><th>v7</th></tr></thead>
+  <tbody>
+    <tr><td><code>tx.create([[name, body]])</code></td><td><code>await tx.addOperation(name, body)</code></td></tr>
+    <tr><td><code>call()</code></td><td><code>callRPC()</code> returns the result and throws <code>RPCError</code></td></tr>
+    <tr><td><code>broadcast(timeout, retry)</code></td><td><code>broadcast(checkStatus)</code></td></tr>
+    <tr><td>Timeout in seconds</td><td>Timeout in milliseconds</td></tr>
+    <tr><td><code>new Transaction(tx)</code></td><td><code>new Transaction({ transaction, expiration })</code></td></tr>
+    <tr><td><code>Transaction.signedTransaction</code></td><td><code>Transaction.transaction</code></td></tr>
+    <tr><td><code>config.node</code> string</td><td><code>config.nodes</code> array</td></tr>
+    <tr><td><code>config.healthcheckInterval</code></td><td>Removed</td></tr>
+  </tbody>
+</table>
+<h2>Create a transaction</h2>
+<pre><code>// v6
+const tx = new Transaction()
+await tx.create([['vote', { voter: 'alice', author: 'bob', permlink: 'post', weight: 10000 }]])
+
+// v7
+const tx = new Transaction()
+await tx.addOperation('vote', {
+  voter: 'alice',
+  author: 'bob',
+  permlink: 'post',
+  weight: 10000
+})</code></pre>
+<h2>API call</h2>
+<pre><code>// v6
+const result = await call('condenser_api.get_accounts', [['alice']])
+const accounts = result.result
+
+// v7
+const accounts = await callRPC('condenser_api.get_accounts', [['alice']])</code></pre>
+<h2>Configuration</h2>
+<pre><code>// v6
+config.node = 'https://api.hive.blog'
+config.timeout = 10
+
+// v7
+config.nodes = ['https://api.hive.blog', 'https://api.deathwing.me']
+config.timeout = 10_000</code></pre>
+
+        <p class="footer-note">hive-tx is MIT licensed.</p>
+      </article>
+    </main>
+  </div>
+  <script src="assets/site.js"></script>
+</body>
+</html>

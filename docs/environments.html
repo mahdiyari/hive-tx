@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Environments — hive-tx</title>
+  <meta name="description" content="hive-tx supports Node.js, browsers, workers, and serverless runtimes.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="environments">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <a class="brand" href="index.html">hive-tx <small>v7</small></a>
+    <div class="top-actions">
+      <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
+      <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
+    </div>
+  </header>
+  <div class="shell">
+    <aside id="nav"><label>Start</label>
+<a href="index.html" data-page="index">Overview</a>
+<a href="install.html" data-page="install">Install</a>
+<a href="start.html" data-page="start">Quick start</a>
+<a href="examples.html" data-page="examples">Examples</a>
+<label>Use</label>
+<a href="transactions.html" data-page="transactions">Transactions</a>
+<a href="keys.html" data-page="keys">Keys</a>
+<a href="memo.html" data-page="memo">Memos</a>
+<a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="config.html" data-page="config">Configuration</a>
+<a href="utils.html" data-page="utils">Utilities</a>
+<label>Reference</label>
+<a href="environments.html" data-page="environments" class="current">Environments</a>
+<a href="migrate.html" data-page="migrate">Migration from v6</a>
+<a href="reference.html" data-page="reference">API reference</a></aside>
+    <main id="main">
+      <article>
+        <p class="kicker">Reference</p>
+        <h1>Environments</h1>
+        <p class="lead">hive-tx supports Node.js, browsers, workers, and serverless runtimes.</p>
+        
+<h2>Module formats</h2>
+<p>The package type is <code>module</code>. The package also ships CommonJS.</p>
+<ul>
+  <li>ESM: <code>import { PrivateKey } from 'hive-tx'</code></li>
+  <li>CommonJS: <code>const { PrivateKey } = require('hive-tx')</code></li>
+</ul>
+<p>Use version 7.2.1 or later. Version 7.2.0 CommonJS throws an error on key encoding.</p>
+<h2>Node.js</h2>
+<p>The engine field is <code>node &gt;= 20</code>. The library uses <code>fetch</code> and <code>AbortSignal.timeout</code>.</p>
+<h2>Browser and CDN</h2>
+<p>Load <code>dist/index.mjs</code>. The file has no extra chunk. Crypto code is in the file.</p>
+<h2>Serverless</h2>
+<p>The build has no nested runtime packages. A Lambda or a Worker can load the file without <code>bs58</code> or <code>@noble/*</code> in <code>node_modules</code>.</p>
+<p>Do not change <code>config.nodes</code> in each concurrent invocation if those invocations share a process.</p>
+<h2>Tests</h2>
+<p>From 7.2.1 the published files are self-contained. Jest 30 can load hive-tx in the Node environment:</p>
+<pre><code>const { PrivateKey } = require('hive-tx')
+
+test('derives a posting key', () => {
+  const pub = PrivateKey.fromLogin('alice', 'x', 'posting').createPublic().toString()
+  expect(pub.startsWith('STM')).toBe(true)
+})</code></pre>
+<p>ESM Jest also works with <code>NODE_OPTIONS=--experimental-vm-modules</code> and a <code>.mjs</code> test file. Version 7.2.0 CommonJS fails in Jest because of a <code>bs58</code> interop bug. Use 7.2.1 or later.</p>
+
+        <p class="footer-note">hive-tx is MIT licensed.</p>
+      </article>
+    </main>
+  </div>
+  <script src="assets/site.js"></script>
+</body>
+</html>

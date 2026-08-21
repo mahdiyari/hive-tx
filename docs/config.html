@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Configuration — hive-tx</title>
+  <meta name="description" content="The config object sets nodes, timeouts, chain id, and the address prefix.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="config">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <a class="brand" href="index.html">hive-tx <small>v7</small></a>
+    <div class="top-actions">
+      <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
+      <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
+    </div>
+  </header>
+  <div class="shell">
+    <aside id="nav"><label>Start</label>
+<a href="index.html" data-page="index">Overview</a>
+<a href="install.html" data-page="install">Install</a>
+<a href="start.html" data-page="start">Quick start</a>
+<a href="examples.html" data-page="examples">Examples</a>
+<label>Use</label>
+<a href="transactions.html" data-page="transactions">Transactions</a>
+<a href="keys.html" data-page="keys">Keys</a>
+<a href="memo.html" data-page="memo">Memos</a>
+<a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="config.html" data-page="config" class="current">Configuration</a>
+<a href="utils.html" data-page="utils">Utilities</a>
+<label>Reference</label>
+<a href="environments.html" data-page="environments">Environments</a>
+<a href="migrate.html" data-page="migrate">Migration from v6</a>
+<a href="reference.html" data-page="reference">API reference</a></aside>
+    <main id="main">
+      <article>
+        <p class="kicker">Use</p>
+        <h1>Configuration</h1>
+        <p class="lead">The config object sets nodes, timeouts, chain id, and the address prefix.</p>
+        
+<pre><code>import { config } from 'hive-tx'
+
+config.nodes = [
+  'https://api.hive.blog',
+  'https://api.deathwing.me',
+  'https://api.openhive.network',
+  'https://rpc.mahdiyari.info',
+  'https://techcoderx.com',
+  'https://hiveapi.actifit.io',
+  'https://api.c0ff33a.uk'
+]
+config.restNodes = [
+  'https://api.hive.blog',
+  'https://rpc.mahdiyari.info',
+  'https://techcoderx.com',
+  'https://hiveapi.actifit.io',
+  'https://api.c0ff33a.uk'
+]
+config.timeout = 10_000
+config.retry = 8
+config.address_prefix = 'STM'
+config.chain_id = 'beeab0de00000000000000000000000000000000000000000000000000000000'</code></pre>
+<table>
+  <thead><tr><th>Field</th><th>Unit</th><th>Default</th></tr></thead>
+  <tbody>
+    <tr><td><code>nodes</code></td><td>URL array</td><td>Public JSON-RPC nodes</td></tr>
+    <tr><td><code>restNodes</code></td><td>URL array with no trailing slash</td><td>Public REST nodes</td></tr>
+    <tr><td><code>timeout</code></td><td>milliseconds</td><td>10000</td></tr>
+    <tr><td><code>retry</code></td><td>count</td><td>8</td></tr>
+    <tr><td><code>address_prefix</code></td><td>string</td><td><code>STM</code></td></tr>
+    <tr><td><code>chain_id</code></td><td>64 hex characters</td><td>Hive mainnet chain id</td></tr>
+  </tbody>
+</table>
+<div class="callout caution">
+  <strong>Caution</strong>
+  <code>config</code> is global for the process. Concurrent tasks that change <code>config.nodes</code> can select the wrong node. Set the node list once at start.
+</div>
+<p>Timeout and expiration values are in milliseconds in v7. In v6 those values were in seconds.</p>
+
+        <p class="footer-note">hive-tx is MIT licensed.</p>
+      </article>
+    </main>
+  </div>
+  <script src="assets/site.js"></script>
+</body>
+</html>

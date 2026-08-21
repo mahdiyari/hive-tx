@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Examples — hive-tx</title>
+  <meta name="description" content="Copy these patterns. Replace keys and account names with your values.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="examples">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <a class="brand" href="index.html">hive-tx <small>v7</small></a>
+    <div class="top-actions">
+      <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
+      <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
+    </div>
+  </header>
+  <div class="shell">
+    <aside id="nav"><label>Start</label>
+<a href="index.html" data-page="index">Overview</a>
+<a href="install.html" data-page="install">Install</a>
+<a href="start.html" data-page="start">Quick start</a>
+<a href="examples.html" data-page="examples" class="current">Examples</a>
+<label>Use</label>
+<a href="transactions.html" data-page="transactions">Transactions</a>
+<a href="keys.html" data-page="keys">Keys</a>
+<a href="memo.html" data-page="memo">Memos</a>
+<a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="config.html" data-page="config">Configuration</a>
+<a href="utils.html" data-page="utils">Utilities</a>
+<label>Reference</label>
+<a href="environments.html" data-page="environments">Environments</a>
+<a href="migrate.html" data-page="migrate">Migration from v6</a>
+<a href="reference.html" data-page="reference">API reference</a></aside>
+    <main id="main">
+      <article>
+        <p class="kicker">Start</p>
+        <h1>Examples</h1>
+        <p class="lead">Copy these patterns. Replace keys and account names with your values.</p>
+        
+<h2>Transfer HIVE</h2>
+<pre><code>import { Transaction, PrivateKey } from 'hive-tx'
+
+async function transferHive() {
+  const tx = new Transaction()
+  await tx.addOperation('transfer', {
+    from: 'myaccount',
+    to: 'recipient',
+    amount: '1.000 HIVE',
+    memo: 'Thank you!'
+  })
+  const privateKey = PrivateKey.from('5J...active-key')
+  tx.sign(privateKey)
+  const result = await tx.broadcast()
+  console.log(result.tx_id, result.status)
+}</code></pre>
+<p>v7 returns <code>{ tx_id, status }</code>. It does not return <code>result.result.tx_id</code>.</p>
+<h2>Comment</h2>
+<pre><code>const tx = new Transaction()
+await tx.addOperation('comment', {
+  parent_author: '',
+  parent_permlink: 'hive',
+  author: 'myaccount',
+  permlink: 'hello-hive',
+  title: 'Hello',
+  body: 'First post',
+  json_metadata: JSON.stringify({ tags: ['hive'], app: 'hive-tx' })
+})
+tx.sign(PrivateKey.from('5J...posting-key'))
+await tx.broadcast()</code></pre>
+<p>A root post uses an empty <code>parent_author</code>. A reply sets <code>parent_author</code> and <code>parent_permlink</code> to the parent comment.</p>
+<h2>custom_json</h2>
+<pre><code>await tx.addOperation('custom_json', {
+  required_auths: [],
+  required_posting_auths: ['myaccount'],
+  id: 'follow',
+  json: JSON.stringify(['follow', {
+    follower: 'myaccount',
+    following: 'alice',
+    what: ['blog']
+  }])
+})</code></pre>
+<h2>Sign and verify</h2>
+<pre><code>import { Transaction, PrivateKey, Signature } from 'hive-tx'
+
+const tx = new Transaction()
+await tx.addOperation('vote', {
+  voter: 'myaccount',
+  author: 'some-author',
+  permlink: 'some-post-permlink',
+  weight: 10000
+})
+const privateKey = PrivateKey.from(
+  '5JRaypasxMx1L97ZUX7YuC5Psb5EAbF821kkAGtBj7xCJFQcbLg'
+)
+tx.sign(privateKey)
+const signature = tx.transaction.signatures[0]
+const digest = tx.digest().digest
+const ok1 = privateKey.createPublic().verify(digest, signature)
+const ok2 =
+  Signature.from(signature).getPublicKey(digest).toString() ===
+  privateKey.createPublic().toString()
+console.log(ok1, ok2)</code></pre>
+<h2>Multi-signature</h2>
+<pre><code>tx.sign([ownerKey, activeKey])
+// or
+tx.sign(ownerKey)
+tx.sign(activeKey)</code></pre>
+<h2>Wait for an irreversible block</h2>
+<pre><code>const result = await tx.broadcast(true)
+console.log(result.status)
+// 'within_irreversible_block' | 'expired_irreversible' | 'too_old' | 'unknown'</code></pre>
+<h2>JSON-RPC</h2>
+<pre><code>import { callRPC } from 'hive-tx'
+
+const accounts = await callRPC('condenser_api.get_accounts', [['hiveio']])
+const props = await callRPC('condenser_api.get_dynamic_global_properties')
+console.log(accounts[0].name, props.head_block_number)</code></pre>
+<p>API method names: <a href="https://developers.hive.io/apidefinitions/">Hive API definitions</a>.</p>
+<h2>Quorum</h2>
+<pre><code>import { callWithQuorum } from 'hive-tx'
+
+const accounts = await callWithQuorum(
+  'condenser_api.get_accounts',
+  [['hiveio']],
+  2
+)</code></pre>
+<p>Quorum is JSON equality across nodes. It is not a head-lag check.</p>
+<h2>Account history filter</h2>
+<pre><code>import { callRPC, utils } from 'hive-tx'
+
+const filter = utils.makeBitMaskFilter([
+  utils.operations.transfer,
+  utils.operations.vote,
+  utils.operations.comment
+])
+const history = await callRPC('condenser_api.get_account_history', [
+  'myaccount',
+  -1,
+  100,
+  ...filter
+])</code></pre>
+<h2>REST</h2>
+<pre><code>import { callREST } from 'hive-tx'
+
+const balance = await callREST('balance', '/accounts/{account-name}/balances', {
+  'account-name': 'alice'
+})</code></pre>
+<p>REST nodes are in <code>config.restNodes</code>. Browse endpoints on a node such as <a href="https://rpc.mahdiyari.info">rpc.mahdiyari.info</a>.</p>
+<h2>Encrypt a memo</h2>
+<pre><code>import { Memo, PrivateKey } from 'hive-tx'
+
+const senderMemoKey = PrivateKey.from('5J...sender-memo-key')
+const encrypted = Memo.encode(
+  senderMemoKey,
+  'STM...recipient-memo-public-key',
+  '#Hello World!'
+)
+await tx.addOperation('transfer', {
+  from: 'sender',
+  to: 'receiver',
+  amount: '0.001 HIVE',
+  memo: encrypted
+})</code></pre>
+<p>Text without a leading <code>#</code> is not encrypted.</p>
+<h2>Decrypt a memo</h2>
+<pre><code>const text = Memo.decode(
+  PrivateKey.from('5J...recipient-memo-key'),
+  encryptedMemo
+)</code></pre>
+<h2>Generate keys</h2>
+<pre><code>import { PrivateKey } from 'hive-tx'
+
+const privateKey = PrivateKey.randomKey()
+const publicKey = privateKey.createPublic()
+console.log(privateKey.inspect())
+console.log(publicKey.toString())</code></pre>
+<h2>Keys from a master password</h2>
+<pre><code>const owner = PrivateKey.fromLogin('username', 'master-password', 'owner')
+const active = PrivateKey.fromLogin('username', 'master-password', 'active')
+const posting = PrivateKey.fromLogin('username', 'master-password', 'posting')
+const memo = PrivateKey.fromLogin('username', 'master-password', 'memo')</code></pre>
+<p><code>fromLogin</code> is a static method on <code>PrivateKey</code>. Do not call it on a key instance.</p>
+<h2>Validate a username</h2>
+<pre><code>import { utils } from 'hive-tx'
+
+for (const name of ['alice', 'a', 'BadName']) {
+  const error = utils.validateUsername(name)
+  console.log(name, error === null ? 'valid' : error)
+}</code></pre>
+<h2>Witness set properties</h2>
+<pre><code>import { utils, Transaction } from 'hive-tx'
+
+const operation = utils.buildWitnessSetProperties('mywitness', {
+  key: 'STM1111111111111111111111111111111114T1Anm',
+  account_creation_fee: '0.000 HIVE',
+  account_subsidy_budget: 10000,
+  account_subsidy_decay: 330782,
+  maximum_block_size: 65536,
+  hbd_interest_rate: 0,
+  hbd_exchange_rate: { base: '0.250 HBD', quote: '1.000 HIVE' },
+  url: 'https://example.com'
+})
+const tx = new Transaction()
+await tx.addOperation(operation[0], operation[1])
+tx.sign(PrivateKey.from('5J...active-key'))
+await tx.broadcast()</code></pre>
+<p><code>key</code> is required. It is the current signing public key.</p>
+<h2>Handle RPC errors</h2>
+<pre><code>import { callRPC } from 'hive-tx'
+
+try {
+  await callRPC('condenser_api.get_accounts', [['alice']])
+} catch (e) {
+  if (e && e.name === 'RPCError') {
+    console.log(e.code, e.message, e.data)
+  } else {
+    throw e
+  }
+}</code></pre>
+<p><code>RPCError</code> is thrown for Hive JSON-RPC errors. Network failures retry, then throw a normal error.</p>
+<h2>Browser</h2>
+<pre><code>&lt;script type="module"&gt;
+  import { PrivateKey } from
+    'https://cdn.jsdelivr.net/npm/hive-tx@7/dist/index.mjs'
+  const pub = PrivateKey.fromLogin('alice', 'x', 'posting').createPublic()
+  console.log(pub.toString())
+&lt;/script&gt;</code></pre>
+
+        <p class="footer-note">hive-tx is MIT licensed.</p>
+      </article>
+    </main>
+  </div>
+  <script src="assets/site.js"></script>
+</body>
+</html>

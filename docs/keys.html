@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Keys and signatures — hive-tx</title>
+  <meta name="description" content="PrivateKey, PublicKey, and Signature create Hive keys and verify signatures.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="keys">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <a class="brand" href="index.html">hive-tx <small>v7</small></a>
+    <div class="top-actions">
+      <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
+      <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
+    </div>
+  </header>
+  <div class="shell">
+    <aside id="nav"><label>Start</label>
+<a href="index.html" data-page="index">Overview</a>
+<a href="install.html" data-page="install">Install</a>
+<a href="start.html" data-page="start">Quick start</a>
+<a href="examples.html" data-page="examples">Examples</a>
+<label>Use</label>
+<a href="transactions.html" data-page="transactions">Transactions</a>
+<a href="keys.html" data-page="keys" class="current">Keys</a>
+<a href="memo.html" data-page="memo">Memos</a>
+<a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="config.html" data-page="config">Configuration</a>
+<a href="utils.html" data-page="utils">Utilities</a>
+<label>Reference</label>
+<a href="environments.html" data-page="environments">Environments</a>
+<a href="migrate.html" data-page="migrate">Migration from v6</a>
+<a href="reference.html" data-page="reference">API reference</a></aside>
+    <main id="main">
+      <article>
+        <p class="kicker">Use</p>
+        <h1>Keys and signatures</h1>
+        <p class="lead">PrivateKey, PublicKey, and Signature create Hive keys and verify signatures.</p>
+        
+<h2>PrivateKey</h2>
+<p>A private key is a secp256k1 secret. The WIF string is the storage format.</p>
+<pre><code>import { PrivateKey } from 'hive-tx'
+
+const fromWif = PrivateKey.from('5JdeC9P7Pbd1uGdFVEsJ41EkEnADbbHGq6p1BwFxm6txNBsQnsw')
+const random = PrivateKey.randomKey()
+const fromSeed = PrivateKey.fromSeed('my-secret-seed')
+const posting = PrivateKey.fromLogin('alice', 'master-password', 'posting')</code></pre>
+<table>
+  <thead><tr><th>Method</th><th>Input</th><th>Output</th></tr></thead>
+  <tbody>
+    <tr><td><code>from</code></td><td>WIF string or 32-byte <code>Uint8Array</code></td><td>PrivateKey</td></tr>
+    <tr><td><code>fromString</code></td><td>WIF string</td><td>PrivateKey</td></tr>
+    <tr><td><code>fromSeed</code></td><td>UTF-8 string, hex string, or bytes</td><td>SHA-256 of the seed as a key</td></tr>
+    <tr><td><code>fromLogin</code></td><td>username, password, role</td><td>Hive login key for that role</td></tr>
+    <tr><td><code>randomKey</code></td><td>none</td><td>New random key</td></tr>
+    <tr><td><code>createPublic</code></td><td>optional prefix</td><td>PublicKey</td></tr>
+    <tr><td><code>sign</code></td><td>32-byte hash</td><td>Signature</td></tr>
+    <tr><td><code>toString</code></td><td>none</td><td>WIF string</td></tr>
+    <tr><td><code>inspect</code></td><td>none</td><td>Masked WIF string</td></tr>
+    <tr><td><code>getSharedSecret</code></td><td>PublicKey</td><td>64-byte secret for memo encryption</td></tr>
+  </tbody>
+</table>
+<p>Roles for <code>fromLogin</code> are <code>owner</code>, <code>active</code>, <code>posting</code>, and <code>memo</code>. The default role is <code>active</code>.</p>
+<p>The seed for <code>fromLogin</code> is <code>username + role + password</code>.</p>
+<h2>PublicKey</h2>
+<p>A Hive public key string starts with the address prefix. The default prefix is <code>STM</code>.</p>
+<pre><code>import { PublicKey } from 'hive-tx'
+
+const pub = privateKey.createPublic()
+const fromStr = PublicKey.from('STM8m5UgaFAAYQRuaNejYdS8FVLVp9Ss3K1qAVk5de6F8s3HnVbvA')
+const ok = pub.verify(messageHash, signature)</code></pre>
+<table>
+  <thead><tr><th>Method</th><th>Function</th></tr></thead>
+  <tbody>
+    <tr><td><code>from</code> / <code>fromString</code></td><td>Read a public key string.</td></tr>
+    <tr><td><code>verify</code></td><td>Return true if the signature matches the 32-byte hash.</td></tr>
+    <tr><td><code>toString</code> / <code>toJSON</code></td><td>Return the public key string with prefix.</td></tr>
+  </tbody>
+</table>
+<h2>Signature</h2>
+<p>A compact recoverable signature is a hex string with 130 characters.</p>
+<pre><code>import { Signature } from 'hive-tx'
+
+const sig = Signature.from(hex)
+const recovered = sig.getPublicKey(messageHash)
+const hexOut = sig.customToString()</code></pre>
+<p><code>getPublicKey</code> needs a 32-byte hash as <code>Uint8Array</code> or a 64-character hex string.</p>
+<p>To recover a Hive Keychain <code>requestSignBuffer</code> proof:</p>
+<ol class="steps">
+  <li>Create a SHA-256 hash of the UTF-8 message.</li>
+  <li>Remove a leading <code>0x</code> from the signature if it is present.</li>
+  <li>Call <code>Signature.from(hex).getPublicKey(hash).toString()</code>.</li>
+</ol>
+
+        <p class="footer-note">hive-tx is MIT licensed.</p>
+      </article>
+    </main>
+  </div>
+  <script src="assets/site.js"></script>
+</body>
+</html>

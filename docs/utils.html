@@ -1,0 +1,85 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Utilities — hive-tx</title>
+  <meta name="description" content="The utils object validates names, builds history filters, and builds witness properties.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+</head>
+<body data-page="utils">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <a class="brand" href="index.html">hive-tx <small>v7</small></a>
+    <div class="top-actions">
+      <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
+      <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
+    </div>
+  </header>
+  <div class="shell">
+    <aside id="nav"><label>Start</label>
+<a href="index.html" data-page="index">Overview</a>
+<a href="install.html" data-page="install">Install</a>
+<a href="start.html" data-page="start">Quick start</a>
+<a href="examples.html" data-page="examples">Examples</a>
+<label>Use</label>
+<a href="transactions.html" data-page="transactions">Transactions</a>
+<a href="keys.html" data-page="keys">Keys</a>
+<a href="memo.html" data-page="memo">Memos</a>
+<a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="config.html" data-page="config">Configuration</a>
+<a href="utils.html" data-page="utils" class="current">Utilities</a>
+<label>Reference</label>
+<a href="environments.html" data-page="environments">Environments</a>
+<a href="migrate.html" data-page="migrate">Migration from v6</a>
+<a href="reference.html" data-page="reference">API reference</a></aside>
+    <main id="main">
+      <article>
+        <p class="kicker">Use</p>
+        <h1>Utilities</h1>
+        <p class="lead">The utils object validates names, builds history filters, and builds witness properties.</p>
+        
+<h2>validateUsername</h2>
+<p>The function returns <code>null</code> if the name is valid. The function returns an error string if the name is not valid.</p>
+<pre><code>import { utils } from 'hive-tx'
+
+const error = utils.validateUsername('alice')
+if (error) {
+  console.log(error)
+}</code></pre>
+<h2>makeBitMaskFilter</h2>
+<p>Use the filter with <code>condenser_api.get_account_history</code>.</p>
+<pre><code>const filter = utils.makeBitMaskFilter([
+  utils.operations.transfer,
+  utils.operations.vote,
+  utils.operations.comment
+])
+const history = await callRPC('condenser_api.get_account_history', [
+  'alice',
+  -1,
+  100,
+  ...filter
+])</code></pre>
+<p><code>utils.operations</code> maps operation names to numeric ids. Example: <code>vote</code> is 0. <code>transfer</code> is 2.</p>
+<h2>buildWitnessSetProperties</h2>
+<p>This helper is required for <code>witness_set_properties</code>. The helper serializes property values to hex.</p>
+<pre><code>const operation = utils.buildWitnessSetProperties('mywitness', {
+  key: 'STM1111111111111111111111111111111114T1Anm',
+  account_creation_fee: '0.000 HIVE',
+  maximum_block_size: 65536,
+  url: 'https://example.com'
+})
+const tx = new Transaction()
+await tx.addOperation(operation[0], operation[1])</code></pre>
+<p>The <code>key</code> field is required. The field is the current signing public key.</p>
+
+        <p class="footer-note">hive-tx is MIT licensed.</p>
+      </article>
+    </main>
+  </div>
+  <script src="assets/site.js"></script>
+</body>
+</html>
