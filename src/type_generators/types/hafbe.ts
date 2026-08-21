@@ -433,11 +433,7 @@ export interface components {
     'hafbe_types.sort_direction': 'asc' | 'desc'
     /** @enum {string} */
     'hafbe_types.order_by_votes':
-      | 'voter'
-      | 'vests'
-      | 'account_vests'
-      | 'proxied_vests'
-      | 'timestamp'
+      'voter' | 'vests' | 'account_vests' | 'proxied_vests' | 'timestamp'
     /** @enum {string} */
     'hafbe_types.order_by_witness':
       | 'witness'

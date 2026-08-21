@@ -27,10 +27,10 @@ npm install hive-tx --save
 import { Transaction, PrivateKey, callRPC } from 'hive-tx'
 ```
 
-The library has two build outputs:
+The library has two self-contained build outputs (crypto dependencies are inlined):
 
-- ES Module (esm)
-- CommonJS (cjs)
+- ES Module (esm) — Node, browsers, workers, and serverless/edge
+- CommonJS (cjs) — Node and CJS bundlers
 
 Your application will automatically pick the right build for your environment through package exports.
 
