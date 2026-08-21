@@ -1,4 +1,4 @@
-import bs58 from 'bs58'
+import { decode as decodeBase58, encode as encodeBase58 } from './base58.js'
 import { ByteBuffer } from './ByteBuffer.js'
 import { Serializer } from './serializer.js'
 import { PrivateKey } from './PrivateKey.js'
@@ -61,7 +61,7 @@ const encode = (
   })
   mbuf2.flip()
   const data = new Uint8Array(mbuf2.toBuffer())
-  return '#' + bs58.encode(data)
+  return '#' + encodeBase58(data)
 }
 
 /**
@@ -80,8 +80,7 @@ const decode = (privateKey: string | PrivateKey, memo: string): string => {
   memo = memo.substring(1)
   checkEncryption()
   privateKey = toPrivateObj(privateKey)
-  // memo = bs58.decode(memo)
-  let memoBuffer = Deserializer.Memo(bs58.decode(memo))
+  let memoBuffer = Deserializer.Memo(decodeBase58(memo))
   const { from, to, nonce, check, encrypted } = memoBuffer
   const pubkey = privateKey.createPublic().toString()
   const otherpub =

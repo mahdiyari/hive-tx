@@ -1,4 +1,4 @@
-import bs58 from 'bs58'
+import { decode as decodeBase58, encode as encodeBase58 } from './base58.js'
 import { secp256k1 } from '@noble/curves/secp256k1.js'
 import { sha256, sha512 } from '@noble/hashes/sha2.js'
 import { PublicKey } from './PublicKey.js'
@@ -190,12 +190,12 @@ const doubleSha256 = (input: Uint8Array) => {
 const encodePrivate = (key: Uint8Array) => {
   // assert.equal(key.readUInt8(0), 0x80, 'private key network id mismatch')
   const checksum = doubleSha256(key)
-  return bs58.encode(new Uint8Array([...key, ...checksum.slice(0, 4)]))
+  return encodeBase58(new Uint8Array([...key, ...checksum.slice(0, 4)]))
 }
 
 /** Decode bs58+doubleSha256-checksum encoded private key. */
 const decodePrivate = (encodedKey: string) => {
-  const buffer = bs58.decode(encodedKey)
+  const buffer = decodeBase58(encodedKey)
   if (!isUint8ArrayEqual(buffer.slice(0, 1), NETWORK_ID)) {
     throw new Error('Private key network id mismatch')
   }

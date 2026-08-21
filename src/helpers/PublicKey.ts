@@ -1,5 +1,5 @@
 import { ripemd160 } from '@noble/hashes/legacy.js'
-import bs58 from 'bs58'
+import { decode as decodeBase58, encode as encodeBase58 } from './base58.js'
 import { config } from '../config.js'
 import { secp256k1 } from '@noble/curves/secp256k1.js'
 import { Signature } from './Signature.js'
@@ -88,14 +88,14 @@ export class PublicKey {
 
 const encodePublic = (key: Uint8Array, prefix: string): string => {
   const checksum = ripemd160(key)
-  return prefix + bs58.encode(new Uint8Array([...key, ...checksum.subarray(0, 4)]))
+  return prefix + encodeBase58(new Uint8Array([...key, ...checksum.subarray(0, 4)]))
 }
 
 /** Decode bs58+ripemd160-checksum encoded public key. */
 const decodePublic = (encodedKey: string) => {
   const prefix = encodedKey.slice(0, 3)
   encodedKey = encodedKey.slice(3)
-  const buffer = bs58.decode(encodedKey)
+  const buffer = decodeBase58(encodedKey)
   const key = buffer.subarray(0, buffer.length - 4)
   return { key: key as Uint8Array, prefix }
 }
