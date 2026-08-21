@@ -8,6 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
+  <script>
+    (function () {
+      var key = 'hive-tx-theme'
+      var stored = localStorage.getItem(key)
+      var theme = stored === 'light' || stored === 'dark'
+        ? stored
+        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      document.documentElement.setAttribute('data-theme', theme)
+    })()
+  </script>
 </head>
 <body data-page="start">
   <a class="skip" href="#main">Skip to content</a>
@@ -15,6 +25,7 @@
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
     <a class="brand" href="index.html">hive-tx <small>v7</small></a>
     <div class="top-actions">
+      <button class="theme-btn" type="button" data-theme-toggle>Light</button>
       <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
       <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
     </div>
@@ -43,8 +54,8 @@
         <p class="lead">Install the package. Create a vote. Call an API. Derive a key.</p>
         
 <h2>Install</h2>
-<pre><code>npm install hive-tx --save</code></pre>
-<pre><code>import { Transaction, PrivateKey, callRPC } from 'hive-tx'</code></pre>
+<pre><code class="language-bash">npm install hive-tx --save</code></pre>
+<pre><code class="language-javascript">import { Transaction, PrivateKey, callRPC } from 'hive-tx'</code></pre>
 <h2>Create a vote</h2>
 <ol class="steps">
   <li>Create a <code>Transaction</code> object.</li>
@@ -52,7 +63,7 @@
   <li>Load the posting private key.</li>
   <li>Sign. Broadcast.</li>
 </ol>
-<pre><code>import { Transaction, PrivateKey } from 'hive-tx'
+<pre><code class="language-javascript">import { Transaction, PrivateKey } from 'hive-tx'
 
 const tx = new Transaction()
 await tx.addOperation('vote', {
@@ -71,7 +82,7 @@ console.log(result.tx_id)</code></pre>
 <p><code>weight</code> 10000 is a 100 percent upvote. A negative weight is a downvote.</p>
 <p>A vote needs the posting key. A transfer needs the active key. If one transaction mixes those operations, sign with both keys.</p>
 <h2>Create a transfer</h2>
-<pre><code>const tx = new Transaction()
+<pre><code class="language-javascript">const tx = new Transaction()
 await tx.addOperation('transfer', {
   from: 'sender',
   to: 'receiver',
@@ -82,13 +93,13 @@ tx.sign(PrivateKey.from('5J...active-key'))
 const result = await tx.broadcast()
 console.log(result.tx_id, result.status)</code></pre>
 <h2>Call an API</h2>
-<pre><code>import { callRPC } from 'hive-tx'
+<pre><code class="language-javascript">import { callRPC } from 'hive-tx'
 
 const accounts = await callRPC('condenser_api.get_accounts', [['mahdiyari']])
 console.log(accounts[0].name, accounts[0].balance)</code></pre>
 <p>On RPC errors the function throws <code>RPCError</code>. It does not wrap the result in <code>.result</code>.</p>
 <h2>Create keys</h2>
-<pre><code>import { PrivateKey, PublicKey } from 'hive-tx'
+<pre><code class="language-javascript">import { PrivateKey, PublicKey } from 'hive-tx'
 
 const key1 = PrivateKey.from('5JRaypasxMx1L97ZUX7YuC5Psb5EAbF821kkAGtBj7xCJFQcbLg')
 const key2 = PrivateKey.randomKey()
@@ -101,6 +112,7 @@ console.log(pub.toString())</code></pre>
       </article>
     </main>
   </div>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

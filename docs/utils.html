@@ -8,6 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
+  <script>
+    (function () {
+      var key = 'hive-tx-theme'
+      var stored = localStorage.getItem(key)
+      var theme = stored === 'light' || stored === 'dark'
+        ? stored
+        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      document.documentElement.setAttribute('data-theme', theme)
+    })()
+  </script>
 </head>
 <body data-page="utils">
   <a class="skip" href="#main">Skip to content</a>
@@ -15,6 +25,7 @@
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
     <a class="brand" href="index.html">hive-tx <small>v7</small></a>
     <div class="top-actions">
+      <button class="theme-btn" type="button" data-theme-toggle>Light</button>
       <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
       <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
     </div>
@@ -44,7 +55,7 @@
         
 <h2>validateUsername</h2>
 <p>The function returns <code>null</code> if the name is valid. The function returns an error string if the name is not valid.</p>
-<pre><code>import { utils } from 'hive-tx'
+<pre><code class="language-javascript">import { utils } from 'hive-tx'
 
 const error = utils.validateUsername('alice')
 if (error) {
@@ -52,7 +63,7 @@ if (error) {
 }</code></pre>
 <h2>makeBitMaskFilter</h2>
 <p>Use the filter with <code>condenser_api.get_account_history</code>.</p>
-<pre><code>const filter = utils.makeBitMaskFilter([
+<pre><code class="language-javascript">const filter = utils.makeBitMaskFilter([
   utils.operations.transfer,
   utils.operations.vote,
   utils.operations.comment
@@ -66,7 +77,7 @@ const history = await callRPC('condenser_api.get_account_history', [
 <p><code>utils.operations</code> maps operation names to numeric ids. Example: <code>vote</code> is 0. <code>transfer</code> is 2.</p>
 <h2>buildWitnessSetProperties</h2>
 <p>This helper is required for <code>witness_set_properties</code>. The helper serializes property values to hex.</p>
-<pre><code>const operation = utils.buildWitnessSetProperties('mywitness', {
+<pre><code class="language-javascript">const operation = utils.buildWitnessSetProperties('mywitness', {
   key: 'STM1111111111111111111111111111111114T1Anm',
   account_creation_fee: '0.000 HIVE',
   maximum_block_size: 65536,
@@ -80,6 +91,7 @@ await tx.addOperation(operation[0], operation[1])</code></pre>
       </article>
     </main>
   </div>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

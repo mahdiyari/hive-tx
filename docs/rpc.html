@@ -8,6 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
+  <script>
+    (function () {
+      var key = 'hive-tx-theme'
+      var stored = localStorage.getItem(key)
+      var theme = stored === 'light' || stored === 'dark'
+        ? stored
+        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      document.documentElement.setAttribute('data-theme', theme)
+    })()
+  </script>
 </head>
 <body data-page="rpc">
   <a class="skip" href="#main">Skip to content</a>
@@ -15,6 +25,7 @@
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
     <a class="brand" href="index.html">hive-tx <small>v7</small></a>
     <div class="top-actions">
+      <button class="theme-btn" type="button" data-theme-toggle>Light</button>
       <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
       <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
     </div>
@@ -44,7 +55,7 @@
         
 <h2>callRPC</h2>
 <p><code>callRPC</code> sends a JSON-RPC 2.0 request. The function returns the result. The function throws <code>RPCError</code> for a Hive RPC error.</p>
-<pre><code>import { callRPC } from 'hive-tx'
+<pre><code class="language-javascript">import { callRPC } from 'hive-tx'
 
 const accounts = await callRPC('condenser_api.get_accounts', [['alice']])
 const props = await callRPC('condenser_api.get_dynamic_global_properties')</code></pre>
@@ -62,7 +73,7 @@ const props = await callRPC('condenser_api.get_dynamic_global_properties')</code
 <p>Hive API names are in the Hive developer documentation.</p>
 <h2>callWithQuorum</h2>
 <p><code>callWithQuorum</code> sends the same method to more than one node. The function returns a result only if that number of nodes give the same JSON.</p>
-<pre><code>import { callWithQuorum } from 'hive-tx'
+<pre><code class="language-javascript">import { callWithQuorum } from 'hive-tx'
 
 const accounts = await callWithQuorum(
   'condenser_api.get_accounts',
@@ -76,7 +87,7 @@ const accounts = await callWithQuorum(
 </div>
 <h2>callREST</h2>
 <p><code>callREST</code> calls a REST API on <code>config.restNodes</code>. Not all public nodes have REST APIs.</p>
-<pre><code>import { callREST } from 'hive-tx'
+<pre><code class="language-javascript">import { callREST } from 'hive-tx'
 
 const balance = await callREST(
   'balance',
@@ -103,6 +114,7 @@ const balance = await callREST(
       </article>
     </main>
   </div>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

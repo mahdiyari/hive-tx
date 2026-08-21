@@ -8,6 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
+  <script>
+    (function () {
+      var key = 'hive-tx-theme'
+      var stored = localStorage.getItem(key)
+      var theme = stored === 'light' || stored === 'dark'
+        ? stored
+        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      document.documentElement.setAttribute('data-theme', theme)
+    })()
+  </script>
 </head>
 <body data-page="migrate">
   <a class="skip" href="#main">Skip to content</a>
@@ -15,6 +25,7 @@
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
     <a class="brand" href="index.html">hive-tx <small>v7</small></a>
     <div class="top-actions">
+      <button class="theme-btn" type="button" data-theme-toggle>Light</button>
       <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
       <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
     </div>
@@ -56,7 +67,7 @@
   </tbody>
 </table>
 <h2>Create a transaction</h2>
-<pre><code>// v6
+<pre><code class="language-javascript">// v6
 const tx = new Transaction()
 await tx.create([['vote', { voter: 'alice', author: 'bob', permlink: 'post', weight: 10000 }]])
 
@@ -69,14 +80,14 @@ await tx.addOperation('vote', {
   weight: 10000
 })</code></pre>
 <h2>API call</h2>
-<pre><code>// v6
+<pre><code class="language-javascript">// v6
 const result = await call('condenser_api.get_accounts', [['alice']])
 const accounts = result.result
 
 // v7
 const accounts = await callRPC('condenser_api.get_accounts', [['alice']])</code></pre>
 <h2>Configuration</h2>
-<pre><code>// v6
+<pre><code class="language-javascript">// v6
 config.node = 'https://api.hive.blog'
 config.timeout = 10
 
@@ -88,6 +99,7 @@ config.timeout = 10_000</code></pre>
       </article>
     </main>
   </div>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

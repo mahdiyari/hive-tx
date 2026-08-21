@@ -8,6 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
+  <script>
+    (function () {
+      var key = 'hive-tx-theme'
+      var stored = localStorage.getItem(key)
+      var theme = stored === 'light' || stored === 'dark'
+        ? stored
+        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      document.documentElement.setAttribute('data-theme', theme)
+    })()
+  </script>
 </head>
 <body data-page="transactions">
   <a class="skip" href="#main">Skip to content</a>
@@ -15,6 +25,7 @@
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
     <a class="brand" href="index.html">hive-tx <small>v7</small></a>
     <div class="top-actions">
+      <button class="theme-btn" type="button" data-theme-toggle>Light</button>
       <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
       <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
     </div>
@@ -43,14 +54,14 @@
         <p class="lead">A Transaction object holds operations, signatures, and expiration data.</p>
         
 <h2>Create a transaction</h2>
-<pre><code>const tx = new Transaction()
+<pre><code class="language-javascript">const tx = new Transaction()
 const txLong = new Transaction({ expiration: 120_000 })</code></pre>
 <p>Expiration is in milliseconds. The default is 60000 (1 minute). The maximum is 86400000 (24 hours).</p>
 <p>You can wrap an existing transaction object:</p>
-<pre><code>const tx = new Transaction({ transaction: rawTx })</code></pre>
+<pre><code class="language-javascript">const tx = new Transaction({ transaction: rawTx })</code></pre>
 <h2>Add an operation</h2>
 <p><code>addOperation</code> is async. The first call gets chain properties and sets <code>ref_block_num</code> and <code>ref_block_prefix</code>.</p>
-<pre><code>await tx.addOperation('transfer', {
+<pre><code class="language-javascript">await tx.addOperation('transfer', {
   from: 'sender',
   to: 'receiver',
   amount: '1.000 HIVE',
@@ -59,11 +70,11 @@ const txLong = new Transaction({ expiration: 120_000 })</code></pre>
 <p>You can add more than one operation to the same transaction.</p>
 <h2>Sign</h2>
 <p><code>sign</code> accepts one <code>PrivateKey</code> or an array of keys.</p>
-<pre><code>tx.sign(privateKey)
+<pre><code class="language-javascript">tx.sign(privateKey)
 tx.sign([postingKey, activeKey])</code></pre>
 <p>If there is no transaction, <code>sign</code> throws an error. Call <code>addOperation</code> first.</p>
 <h2>Broadcast</h2>
-<pre><code>const quick = await tx.broadcast()
+<pre><code class="language-javascript">const quick = await tx.broadcast()
 const confirmed = await tx.broadcast(true)</code></pre>
 <table>
   <thead><tr><th>Argument</th><th>Result</th></tr></thead>
@@ -75,11 +86,11 @@ const confirmed = await tx.broadcast(true)</code></pre>
 <p>If there is no signature, <code>broadcast</code> throws an error.</p>
 <p>If a retry causes a duplicate transaction error, the library ignores that error.</p>
 <h2>Digest and transaction id</h2>
-<pre><code>const { digest, txId } = tx.digest()</code></pre>
+<pre><code class="language-javascript">const { digest, txId } = tx.digest()</code></pre>
 <p><code>digest</code> is a 32-byte hash. Use the digest to verify a signature. <code>txId</code> is the first 40 hex characters of the SHA-256 hash of the serialized transaction.</p>
 <h2>Add an external signature</h2>
 <p>Use <code>addSignature</code> when an external tool creates the signature. The signature must be a hex string with 130 characters.</p>
-<pre><code>tx.addSignature(hexSignature)</code></pre>
+<pre><code class="language-javascript">tx.addSignature(hexSignature)</code></pre>
 <h2>Status values</h2>
 <table>
   <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
@@ -95,6 +106,7 @@ const confirmed = await tx.broadcast(true)</code></pre>
       </article>
     </main>
   </div>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

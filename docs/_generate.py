@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Generate hive-tx GitHub Pages HTML. Run from repository root: python3 docs/_generate.py"""
+import html as html_lib
+import re
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent
@@ -19,6 +21,27 @@ NAV = [
     ("Migration from v6", "migrate.html", "migrate"),
     ("API reference", "reference.html", "reference"),
 ]
+
+
+CODE_BLOCK = re.compile(r"<pre><code>(.*?)</code></pre>", re.S)
+
+
+def guess_lang(raw: str) -> str:
+    text = html_lib.unescape(raw).lstrip()
+    first = text.splitlines()[0] if text else ""
+    if first.startswith("<") or first.startswith("<script"):
+        return "xml"
+    if first.startswith(("npm ", "npx ", "NODE_OPTIONS")):
+        return "bash"
+    return "javascript"
+
+
+def tag_code(body: str) -> str:
+    def repl(match: re.Match[str]) -> str:
+        inner = match.group(1)
+        return f'<pre><code class="language-{guess_lang(inner)}">{inner}</code></pre>'
+
+    return CODE_BLOCK.sub(repl, body)
 
 
 def nav_html(current: str) -> str:
@@ -49,6 +72,16 @@ def page(pid: str, title: str, kicker: str, lead: str, body: str) -> str:
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
+  <script>
+    (function () {{
+      var key = 'hive-tx-theme'
+      var stored = localStorage.getItem(key)
+      var theme = stored === 'light' || stored === 'dark'
+        ? stored
+        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      document.documentElement.setAttribute('data-theme', theme)
+    }})()
+  </script>
 </head>
 <body data-page="{pid}">
   <a class="skip" href="#main">Skip to content</a>
@@ -56,6 +89,7 @@ def page(pid: str, title: str, kicker: str, lead: str, body: str) -> str:
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
     <a class="brand" href="index.html">hive-tx <small>v7</small></a>
     <div class="top-actions">
+      <button class="theme-btn" type="button" data-theme-toggle>Light</button>
       <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
       <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
     </div>
@@ -67,11 +101,12 @@ def page(pid: str, title: str, kicker: str, lead: str, body: str) -> str:
         <p class="kicker">{kicker}</p>
         <h1>{title}</h1>
         <p class="lead">{lead}</p>
-        {body}
+        {tag_code(body)}
         <p class="footer-note">hive-tx is MIT licensed.</p>
       </article>
     </main>
   </div>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

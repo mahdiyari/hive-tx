@@ -8,6 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
+  <script>
+    (function () {
+      var key = 'hive-tx-theme'
+      var stored = localStorage.getItem(key)
+      var theme = stored === 'light' || stored === 'dark'
+        ? stored
+        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      document.documentElement.setAttribute('data-theme', theme)
+    })()
+  </script>
 </head>
 <body data-page="examples">
   <a class="skip" href="#main">Skip to content</a>
@@ -15,6 +25,7 @@
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
     <a class="brand" href="index.html">hive-tx <small>v7</small></a>
     <div class="top-actions">
+      <button class="theme-btn" type="button" data-theme-toggle>Light</button>
       <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
       <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
     </div>
@@ -43,7 +54,7 @@
         <p class="lead">Copy these patterns. Replace keys and account names with your values.</p>
         
 <h2>Transfer HIVE</h2>
-<pre><code>import { Transaction, PrivateKey } from 'hive-tx'
+<pre><code class="language-javascript">import { Transaction, PrivateKey } from 'hive-tx'
 
 async function transferHive() {
   const tx = new Transaction()
@@ -60,7 +71,7 @@ async function transferHive() {
 }</code></pre>
 <p>v7 returns <code>{ tx_id, status }</code>. It does not return <code>result.result.tx_id</code>.</p>
 <h2>Comment</h2>
-<pre><code>const tx = new Transaction()
+<pre><code class="language-javascript">const tx = new Transaction()
 await tx.addOperation('comment', {
   parent_author: '',
   parent_permlink: 'hive',
@@ -74,7 +85,7 @@ tx.sign(PrivateKey.from('5J...posting-key'))
 await tx.broadcast()</code></pre>
 <p>A root post uses an empty <code>parent_author</code>. A reply sets <code>parent_author</code> and <code>parent_permlink</code> to the parent comment.</p>
 <h2>custom_json</h2>
-<pre><code>await tx.addOperation('custom_json', {
+<pre><code class="language-javascript">await tx.addOperation('custom_json', {
   required_auths: [],
   required_posting_auths: ['myaccount'],
   id: 'follow',
@@ -85,7 +96,7 @@ await tx.broadcast()</code></pre>
   }])
 })</code></pre>
 <h2>Sign and verify</h2>
-<pre><code>import { Transaction, PrivateKey, Signature } from 'hive-tx'
+<pre><code class="language-javascript">import { Transaction, PrivateKey, Signature } from 'hive-tx'
 
 const tx = new Transaction()
 await tx.addOperation('vote', {
@@ -106,23 +117,23 @@ const ok2 =
   privateKey.createPublic().toString()
 console.log(ok1, ok2)</code></pre>
 <h2>Multi-signature</h2>
-<pre><code>tx.sign([ownerKey, activeKey])
+<pre><code class="language-javascript">tx.sign([ownerKey, activeKey])
 // or
 tx.sign(ownerKey)
 tx.sign(activeKey)</code></pre>
 <h2>Wait for an irreversible block</h2>
-<pre><code>const result = await tx.broadcast(true)
+<pre><code class="language-javascript">const result = await tx.broadcast(true)
 console.log(result.status)
 // 'within_irreversible_block' | 'expired_irreversible' | 'too_old' | 'unknown'</code></pre>
 <h2>JSON-RPC</h2>
-<pre><code>import { callRPC } from 'hive-tx'
+<pre><code class="language-javascript">import { callRPC } from 'hive-tx'
 
 const accounts = await callRPC('condenser_api.get_accounts', [['hiveio']])
 const props = await callRPC('condenser_api.get_dynamic_global_properties')
 console.log(accounts[0].name, props.head_block_number)</code></pre>
 <p>API method names: <a href="https://developers.hive.io/apidefinitions/">Hive API definitions</a>.</p>
 <h2>Quorum</h2>
-<pre><code>import { callWithQuorum } from 'hive-tx'
+<pre><code class="language-javascript">import { callWithQuorum } from 'hive-tx'
 
 const accounts = await callWithQuorum(
   'condenser_api.get_accounts',
@@ -131,7 +142,7 @@ const accounts = await callWithQuorum(
 )</code></pre>
 <p>Quorum is JSON equality across nodes. It is not a head-lag check.</p>
 <h2>Account history filter</h2>
-<pre><code>import { callRPC, utils } from 'hive-tx'
+<pre><code class="language-javascript">import { callRPC, utils } from 'hive-tx'
 
 const filter = utils.makeBitMaskFilter([
   utils.operations.transfer,
@@ -145,14 +156,14 @@ const history = await callRPC('condenser_api.get_account_history', [
   ...filter
 ])</code></pre>
 <h2>REST</h2>
-<pre><code>import { callREST } from 'hive-tx'
+<pre><code class="language-javascript">import { callREST } from 'hive-tx'
 
 const balance = await callREST('balance', '/accounts/{account-name}/balances', {
   'account-name': 'alice'
 })</code></pre>
 <p>REST nodes are in <code>config.restNodes</code>. Browse endpoints on a node such as <a href="https://rpc.mahdiyari.info">rpc.mahdiyari.info</a>.</p>
 <h2>Encrypt a memo</h2>
-<pre><code>import { Memo, PrivateKey } from 'hive-tx'
+<pre><code class="language-javascript">import { Memo, PrivateKey } from 'hive-tx'
 
 const senderMemoKey = PrivateKey.from('5J...sender-memo-key')
 const encrypted = Memo.encode(
@@ -168,32 +179,32 @@ await tx.addOperation('transfer', {
 })</code></pre>
 <p>Text without a leading <code>#</code> is not encrypted.</p>
 <h2>Decrypt a memo</h2>
-<pre><code>const text = Memo.decode(
+<pre><code class="language-javascript">const text = Memo.decode(
   PrivateKey.from('5J...recipient-memo-key'),
   encryptedMemo
 )</code></pre>
 <h2>Generate keys</h2>
-<pre><code>import { PrivateKey } from 'hive-tx'
+<pre><code class="language-javascript">import { PrivateKey } from 'hive-tx'
 
 const privateKey = PrivateKey.randomKey()
 const publicKey = privateKey.createPublic()
 console.log(privateKey.inspect())
 console.log(publicKey.toString())</code></pre>
 <h2>Keys from a master password</h2>
-<pre><code>const owner = PrivateKey.fromLogin('username', 'master-password', 'owner')
+<pre><code class="language-javascript">const owner = PrivateKey.fromLogin('username', 'master-password', 'owner')
 const active = PrivateKey.fromLogin('username', 'master-password', 'active')
 const posting = PrivateKey.fromLogin('username', 'master-password', 'posting')
 const memo = PrivateKey.fromLogin('username', 'master-password', 'memo')</code></pre>
 <p><code>fromLogin</code> is a static method on <code>PrivateKey</code>. Do not call it on a key instance.</p>
 <h2>Validate a username</h2>
-<pre><code>import { utils } from 'hive-tx'
+<pre><code class="language-javascript">import { utils } from 'hive-tx'
 
 for (const name of ['alice', 'a', 'BadName']) {
   const error = utils.validateUsername(name)
   console.log(name, error === null ? 'valid' : error)
 }</code></pre>
 <h2>Witness set properties</h2>
-<pre><code>import { utils, Transaction } from 'hive-tx'
+<pre><code class="language-javascript">import { utils, Transaction } from 'hive-tx'
 
 const operation = utils.buildWitnessSetProperties('mywitness', {
   key: 'STM1111111111111111111111111111111114T1Anm',
@@ -211,7 +222,7 @@ tx.sign(PrivateKey.from('5J...active-key'))
 await tx.broadcast()</code></pre>
 <p><code>key</code> is required. It is the current signing public key.</p>
 <h2>Handle RPC errors</h2>
-<pre><code>import { callRPC } from 'hive-tx'
+<pre><code class="language-javascript">import { callRPC } from 'hive-tx'
 
 try {
   await callRPC('condenser_api.get_accounts', [['alice']])
@@ -224,7 +235,7 @@ try {
 }</code></pre>
 <p><code>RPCError</code> is thrown for Hive JSON-RPC errors. Network failures retry, then throw a normal error.</p>
 <h2>Browser</h2>
-<pre><code>&lt;script type="module"&gt;
+<pre><code class="language-xml">&lt;script type="module"&gt;
   import { PrivateKey } from
     'https://cdn.jsdelivr.net/npm/hive-tx@7/dist/index.mjs'
   const pub = PrivateKey.fromLogin('alice', 'x', 'posting').createPublic()
@@ -235,6 +246,7 @@ try {
       </article>
     </main>
   </div>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

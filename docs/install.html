@@ -8,6 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
+  <script>
+    (function () {
+      var key = 'hive-tx-theme'
+      var stored = localStorage.getItem(key)
+      var theme = stored === 'light' || stored === 'dark'
+        ? stored
+        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      document.documentElement.setAttribute('data-theme', theme)
+    })()
+  </script>
 </head>
 <body data-page="install">
   <a class="skip" href="#main">Skip to content</a>
@@ -15,6 +25,7 @@
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
     <a class="brand" href="index.html">hive-tx <small>v7</small></a>
     <div class="top-actions">
+      <button class="theme-btn" type="button" data-theme-toggle>Light</button>
       <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
       <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
     </div>
@@ -48,17 +59,17 @@
   <li>Open a terminal in the project directory.</li>
   <li>Install the package.</li>
 </ol>
-<pre><code>npm install hive-tx --save</code></pre>
+<pre><code class="language-bash">npm install hive-tx --save</code></pre>
 <p>You can use pnpm or yarn. The package name is <code>hive-tx</code>.</p>
 <h2>Import the library</h2>
 <p>Use an ESM import:</p>
-<pre><code>import { Transaction, PrivateKey, callRPC } from 'hive-tx'</code></pre>
+<pre><code class="language-javascript">import { Transaction, PrivateKey, callRPC } from 'hive-tx'</code></pre>
 <p>Use a CommonJS require:</p>
-<pre><code>const { Transaction, PrivateKey, callRPC } = require('hive-tx')</code></pre>
+<pre><code class="language-javascript">const { Transaction, PrivateKey, callRPC } = require('hive-tx')</code></pre>
 <p>Use hive-tx 7.2.1 or later for CommonJS. Version 7.2.0 CommonJS is not valid.</p>
 <h2>Browser</h2>
 <p>Load the ESM build from a CDN:</p>
-<pre><code>&lt;script type="module"&gt;
+<pre><code class="language-xml">&lt;script type="module"&gt;
   import { Transaction, PrivateKey } from
     'https://cdn.jsdelivr.net/npm/hive-tx@7/dist/index.mjs'
 &lt;/script&gt;</code></pre>
@@ -78,6 +89,7 @@
       </article>
     </main>
   </div>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

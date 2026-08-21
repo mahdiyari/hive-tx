@@ -16,3 +16,23 @@ document.querySelectorAll('pre').forEach((pre) => {
     navigator.clipboard.writeText(text).catch(() => {})
   })
 })
+if (window.hljs) {
+  window.hljs.highlightAll()
+}
+
+const THEME_KEY = 'hive-tx-theme'
+const themeBtn = document.querySelector('[data-theme-toggle]')
+const themeNow = () =>
+  document.documentElement.getAttribute('data-theme') === 'dark' ? 'dark' : 'light'
+const setTheme = (theme) => {
+  document.documentElement.setAttribute('data-theme', theme)
+  localStorage.setItem(THEME_KEY, theme)
+  if (themeBtn) {
+    themeBtn.textContent = theme === 'dark' ? 'Light' : 'Dark'
+    themeBtn.setAttribute('aria-label', theme === 'dark' ? 'Use light theme' : 'Use dark theme')
+  }
+}
+setTheme(themeNow())
+if (themeBtn) {
+  themeBtn.addEventListener('click', () => setTheme(themeNow() === 'dark' ? 'light' : 'dark'))
+}

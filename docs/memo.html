@@ -8,6 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
+  <script>
+    (function () {
+      var key = 'hive-tx-theme'
+      var stored = localStorage.getItem(key)
+      var theme = stored === 'light' || stored === 'dark'
+        ? stored
+        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      document.documentElement.setAttribute('data-theme', theme)
+    })()
+  </script>
 </head>
 <body data-page="memo">
   <a class="skip" href="#main">Skip to content</a>
@@ -15,6 +25,7 @@
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
     <a class="brand" href="index.html">hive-tx <small>v7</small></a>
     <div class="top-actions">
+      <button class="theme-btn" type="button" data-theme-toggle>Light</button>
       <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
       <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
     </div>
@@ -51,7 +62,7 @@
   <li>Use the recipient memo private key to decrypt.</li>
 </ul>
 <h2>Encrypt</h2>
-<pre><code>import { Memo, PrivateKey } from 'hive-tx'
+<pre><code class="language-javascript">import { Memo, PrivateKey } from 'hive-tx'
 
 const senderMemoKey = PrivateKey.from('5J...sender-memo-key')
 const encrypted = Memo.encode(
@@ -61,7 +72,7 @@ const encrypted = Memo.encode(
 )</code></pre>
 <p>Put the encrypted string in a transfer <code>memo</code> field.</p>
 <h2>Decrypt</h2>
-<pre><code>const recipientMemoKey = PrivateKey.from('5J...recipient-memo-key')
+<pre><code class="language-javascript">const recipientMemoKey = PrivateKey.from('5J...recipient-memo-key')
 const text = Memo.decode(recipientMemoKey, encryptedMemo)
 // text starts with '#'</code></pre>
 <div class="callout caution">
@@ -73,6 +84,7 @@ const text = Memo.decode(recipientMemoKey, encryptedMemo)
       </article>
     </main>
   </div>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

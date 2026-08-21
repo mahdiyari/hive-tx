@@ -8,6 +8,16 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
+  <script>
+    (function () {
+      var key = 'hive-tx-theme'
+      var stored = localStorage.getItem(key)
+      var theme = stored === 'light' || stored === 'dark'
+        ? stored
+        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      document.documentElement.setAttribute('data-theme', theme)
+    })()
+  </script>
 </head>
 <body data-page="keys">
   <a class="skip" href="#main">Skip to content</a>
@@ -15,6 +25,7 @@
     <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
     <a class="brand" href="index.html">hive-tx <small>v7</small></a>
     <div class="top-actions">
+      <button class="theme-btn" type="button" data-theme-toggle>Light</button>
       <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
       <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
     </div>
@@ -44,7 +55,7 @@
         
 <h2>PrivateKey</h2>
 <p>A private key is a secp256k1 secret. The WIF string is the storage format.</p>
-<pre><code>import { PrivateKey } from 'hive-tx'
+<pre><code class="language-javascript">import { PrivateKey } from 'hive-tx'
 
 const fromWif = PrivateKey.from('5JdeC9P7Pbd1uGdFVEsJ41EkEnADbbHGq6p1BwFxm6txNBsQnsw')
 const random = PrivateKey.randomKey()
@@ -69,7 +80,7 @@ const posting = PrivateKey.fromLogin('alice', 'master-password', 'posting')</cod
 <p>The seed for <code>fromLogin</code> is <code>username + role + password</code>.</p>
 <h2>PublicKey</h2>
 <p>A Hive public key string starts with the address prefix. The default prefix is <code>STM</code>.</p>
-<pre><code>import { PublicKey } from 'hive-tx'
+<pre><code class="language-javascript">import { PublicKey } from 'hive-tx'
 
 const pub = privateKey.createPublic()
 const fromStr = PublicKey.from('STM8m5UgaFAAYQRuaNejYdS8FVLVp9Ss3K1qAVk5de6F8s3HnVbvA')
@@ -84,7 +95,7 @@ const ok = pub.verify(messageHash, signature)</code></pre>
 </table>
 <h2>Signature</h2>
 <p>A compact recoverable signature is a hex string with 130 characters.</p>
-<pre><code>import { Signature } from 'hive-tx'
+<pre><code class="language-javascript">import { Signature } from 'hive-tx'
 
 const sig = Signature.from(hex)
 const recovered = sig.getPublicKey(messageHash)
@@ -101,6 +112,7 @@ const hexOut = sig.customToString()</code></pre>
       </article>
     </main>
   </div>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>
