@@ -63,19 +63,22 @@
     "@noble/ciphers": "^2.3.0",
     "@noble/curves": "^2.3.0",
     "@noble/hashes": "^2.3.0",
-    "@tsconfig/node-lts": "^24.0.0",
+    "@tsconfig/node-lts": "^24.0.1",
     "@types/node": "^24.13.3",
-    "@types/pg": "^8.21.0",
+    "@types/pg": "^8.23.1",
     "openapi-typescript": "^7.13.0",
-    "pg": "^8.22.0",
+    "pg": "^8.23.0",
     "prettier": "^3.9.6",
     "tsdown": "^0.22.14",
-    "tsx": "^4.23.11",
+    "tsx": "^4.23.12",
     "typescript": "^6.0.3"
   },
   "inlinedDependencies": {
     "@noble/ciphers": "2.3.0",
     "@noble/curves": "2.3.0",
     "@noble/hashes": "2.3.0"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true
   }
 }
