@@ -63,6 +63,13 @@
   callRPC,
   callREST,
   callWithQuorum,
+  checkNode,
+  checkNodes,
+  getNodeHealth,
+  startNodeHealthcheck,
+  stopNodeHealthcheck,
+  clearNodeHealth,
+  clearCallCache,
   config,
   utils
 } from 'hive-tx'</code></pre>
@@ -87,7 +94,15 @@
   status: 'unknown' | 'within_irreversible_block' | 'expired_irreversible' | 'too_old'
 }</code></pre>
 <h2>callRPC</h2>
-<p><code>callRPC(method, params?, timeout?, retry?): Promise&lt;T&gt;</code></p>
+<p><code>callRPC(method, params?, timeout?, retry?, options?): Promise&lt;T&gt;</code></p>
+<p><code>options.cacheTtl</code> is a millisecond TTL. <code>0</code> skips the local cache.</p>
+<h2>Health and cache</h2>
+<p><code>checkNode(url, services?): Promise&lt;NodeHealth&gt;</code></p>
+<p><code>checkNodes(services?): Promise&lt;NodeHealth[]&gt;</code></p>
+<p><code>getNodeHealth(): NodeHealth[]</code></p>
+<p><code>startNodeHealthcheck()</code> and <code>stopNodeHealthcheck()</code></p>
+<p><code>clearNodeHealth()</code> and <code>clearCallCache()</code></p>
+<p><code>services</code> is any mix of <code>'hived'</code>, <code>'hivemind'</code>, and <code>'hafah'</code>.</p>
 <h2>callWithQuorum</h2>
 <p><code>callWithQuorum(method, params?, quorum?): Promise&lt;T&gt;</code></p>
 <h2>callREST</h2>

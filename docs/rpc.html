@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RPC and REST calls — hive-tx</title>
-  <meta name="description" content="callRPC, callREST, and callWithQuorum send requests to Hive nodes.">
+  <meta name="description" content="callRPC, callREST, and callWithQuorum send requests to Hive nodes. Optional healthchecks and a short cache sit on that same path.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -51,7 +51,7 @@
       <article>
         <p class="kicker">Use</p>
         <h1>RPC and REST calls</h1>
-        <p class="lead">callRPC, callREST, and callWithQuorum send requests to Hive nodes.</p>
+        <p class="lead">callRPC, callREST, and callWithQuorum send requests to Hive nodes. Optional healthchecks and a short cache sit on that same path.</p>
         
 <h2>callRPC</h2>
 <p><code>callRPC</code> sends a JSON-RPC 2.0 request. The function returns the result. The function throws <code>RPCError</code> for a Hive RPC error.</p>
@@ -67,10 +67,30 @@ const props = await callRPC('condenser_api.get_dynamic_global_properties')</code
     <tr><td><code>params</code></td><td><code>[]</code></td><td>Array or object</td></tr>
     <tr><td><code>timeout</code></td><td><code>config.timeout</code></td><td>Timeout in milliseconds</td></tr>
     <tr><td><code>retry</code></td><td><code>config.retry</code></td><td>Retry count after a network failure</td></tr>
+    <tr><td><code>options</code></td><td>omit</td><td><code>{ cacheTtl }</code> overrides the local cache for this call. <code>0</code> skips the cache.</td></tr>
   </tbody>
 </table>
 <p>If a node does not respond, the library selects the next URL in <code>config.nodes</code>.</p>
+<p>Dynamic global properties are cached in memory for <code>config.cacheTtl</code> milliseconds. The default list is <code>config.cacheMethods</code>. <code>clearCallCache()</code> drops the stored results. Add a method name to <code>config.cacheMethods</code> to cache another read-only call. Do not add broadcast methods.</p>
 <p>Hive API names are in the Hive developer documentation.</p>
+<h2>Node healthchecks</h2>
+<p>Healthchecks are off until <code>config.healthchecks</code> lists one or more of <code>hived</code>, <code>hivemind</code>, and <code>hafah</code>. Each value is optional. <code>callRPC</code>, <code>callREST</code>, and <code>callWithQuorum</code> then skip nodes that fail the selected probes. The probes use the same JSON-RPC client as <code>callRPC</code>.</p>
+<ul>
+  <li><code>hived</code> calls <code>condenser_api.get_dynamic_global_properties</code>. The head block time must be within <code>config.healthcheckMaxLag</code> milliseconds of now.</li>
+  <li><code>hivemind</code> calls <code>condenser_api.get_follow_count</code> for <code>hiveio</code>.</li>
+  <li><code>hafah</code> calls <code>condenser_api.get_account_history</code> for <code>hiveio</code> and requires one operation.</li>
+</ul>
+<pre><code class="language-javascript">import { checkNode, checkNodes, config, getNodeHealth, stopNodeHealthcheck } from 'hive-tx'
+
+config.healthchecks = ['hived', 'hivemind']
+config.healthcheckInterval = 30_000
+
+const report = await checkNodes()
+const one = await checkNode('https://api.hive.blog', ['hafah'])
+console.log(report, one)
+stopNodeHealthcheck()</code></pre>
+<p>Results are reused for <code>config.healthcheckInterval</code> milliseconds. A positive interval also starts a background recheck. <code>0</code> checks on each call and does not start a timer. <code>startNodeHealthcheck()</code> and <code>stopNodeHealthcheck()</code> control that timer. <code>clearNodeHealth()</code> drops stored results.</p>
+<p>A node that fails a network call is marked unhealthy until the next refresh. If every node fails the selected checks, the call still tries the node list.</p>
 <h2>callWithQuorum</h2>
 <p><code>callWithQuorum</code> sends the same method to more than one node. The function returns a result only if that number of nodes give the same JSON.</p>
 <pre><code class="language-javascript">import { callWithQuorum } from 'hive-tx'

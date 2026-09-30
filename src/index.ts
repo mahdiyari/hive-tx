@@ -1,10 +1,22 @@
 export { Transaction } from './Transaction.js'
 export { PrivateKey } from './helpers/PrivateKey.js'
 export { callRPC, callREST, callWithQuorum } from './helpers/call.js'
+export type { CallRPCOptions } from './helpers/call.js'
 export { config } from './config.js'
+export type { HealthService } from './config.js'
 export { PublicKey } from './helpers/PublicKey.js'
 export { Signature } from './helpers/Signature.js'
 export { Memo } from './helpers/memo.js'
+export { clearCallCache } from './helpers/cache.js'
+export {
+  checkNode,
+  checkNodes,
+  getNodeHealth,
+  startNodeHealthcheck,
+  stopNodeHealthcheck,
+  clearNodeHealth
+} from './helpers/healthcheck.js'
+export type { NodeHealth, ServiceHealth } from './helpers/healthcheck.js'
 export * as utils from './helpers/utils.js'
 
 // Export all types

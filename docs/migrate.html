@@ -63,7 +63,7 @@
     <tr><td><code>new Transaction(tx)</code></td><td><code>new Transaction({ transaction, expiration })</code></td></tr>
     <tr><td><code>Transaction.signedTransaction</code></td><td><code>Transaction.transaction</code></td></tr>
     <tr><td><code>config.node</code> string</td><td><code>config.nodes</code> array</td></tr>
-    <tr><td><code>config.healthcheckInterval</code></td><td>Removed</td></tr>
+    <tr><td><code>config.healthcheckInterval</code></td><td>Off until <code>config.healthchecks</code> is set. Default 30000 milliseconds. Optional checks are <code>hived</code>, <code>hivemind</code>, and <code>hafah</code>.</td></tr>
   </tbody>
 </table>
 <h2>Create a transaction</h2>

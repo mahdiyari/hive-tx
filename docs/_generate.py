@@ -611,7 +611,7 @@ PAGES["rpc"] = (
     "rpc",
     "RPC and REST calls",
     "Use",
-    "callRPC, callREST, and callWithQuorum send requests to Hive nodes.",
+    "callRPC, callREST, and callWithQuorum send requests to Hive nodes. Optional healthchecks and a short cache sit on that same path.",
     """
 <h2>callRPC</h2>
 <p><code>callRPC</code> sends a JSON-RPC 2.0 request. The function returns the result. The function throws <code>RPCError</code> for a Hive RPC error.</p>
@@ -627,10 +627,30 @@ const props = await callRPC('condenser_api.get_dynamic_global_properties')</code
     <tr><td><code>params</code></td><td><code>[]</code></td><td>Array or object</td></tr>
     <tr><td><code>timeout</code></td><td><code>config.timeout</code></td><td>Timeout in milliseconds</td></tr>
     <tr><td><code>retry</code></td><td><code>config.retry</code></td><td>Retry count after a network failure</td></tr>
+    <tr><td><code>options</code></td><td>omit</td><td><code>{ cacheTtl }</code> overrides the local cache for this call. <code>0</code> skips the cache.</td></tr>
   </tbody>
 </table>
 <p>If a node does not respond, the library selects the next URL in <code>config.nodes</code>.</p>
+<p>Dynamic global properties are cached in memory for <code>config.cacheTtl</code> milliseconds. The default list is <code>config.cacheMethods</code>. <code>clearCallCache()</code> drops the stored results. Add a method name to <code>config.cacheMethods</code> to cache another read-only call. Do not add broadcast methods.</p>
 <p>Hive API names are in the Hive developer documentation.</p>
+<h2>Node healthchecks</h2>
+<p>Healthchecks are off until <code>config.healthchecks</code> lists one or more of <code>hived</code>, <code>hivemind</code>, and <code>hafah</code>. Each value is optional. <code>callRPC</code>, <code>callREST</code>, and <code>callWithQuorum</code> then skip nodes that fail the selected probes. The probes use the same JSON-RPC client as <code>callRPC</code>.</p>
+<ul>
+  <li><code>hived</code> calls <code>condenser_api.get_dynamic_global_properties</code>. The head block time must be within <code>config.healthcheckMaxLag</code> milliseconds of now.</li>
+  <li><code>hivemind</code> calls <code>condenser_api.get_follow_count</code> for <code>hiveio</code>.</li>
+  <li><code>hafah</code> calls <code>condenser_api.get_account_history</code> for <code>hiveio</code> and requires one operation.</li>
+</ul>
+<pre><code>import { checkNode, checkNodes, config, stopNodeHealthcheck } from 'hive-tx'
+
+config.healthchecks = ['hived', 'hivemind']
+config.healthcheckInterval = 30_000
+
+const report = await checkNodes()
+const one = await checkNode('https://api.hive.blog', ['hafah'])
+console.log(report, one)
+stopNodeHealthcheck()</code></pre>
+<p>Results are reused for <code>config.healthcheckInterval</code> milliseconds. A positive interval also starts a background recheck. <code>0</code> checks on each call and does not start a timer. <code>startNodeHealthcheck()</code> and <code>stopNodeHealthcheck()</code> control that timer. <code>clearNodeHealth()</code> drops stored results.</p>
+<p>A node that fails a network call is marked unhealthy until the next refresh. If every node fails the selected checks, the call still tries the node list.</p>
 <h2>callWithQuorum</h2>
 <p><code>callWithQuorum</code> sends the same method to more than one node. The function returns a result only if that number of nodes give the same JSON.</p>
 <pre><code>import { callWithQuorum } from 'hive-tx'
@@ -676,7 +696,7 @@ PAGES["config"] = (
     "config",
     "Configuration",
     "Use",
-    "The config object sets nodes, timeouts, chain id, and the address prefix.",
+    "The config object sets nodes, timeouts, healthchecks, the call cache, chain id, and the address prefix.",
     """
 <pre><code>import { config } from 'hive-tx'
 
@@ -698,6 +718,10 @@ config.restNodes = [
 ]
 config.timeout = 10_000
 config.retry = 8
+config.healthchecks = ['hived']
+config.healthcheckInterval = 30_000
+config.healthcheckMaxLag = 30_000
+config.cacheTtl = 2_000
 config.address_prefix = 'STM'
 config.chain_id = 'beeab0de00000000000000000000000000000000000000000000000000000000'</code></pre>
 <table>
@@ -707,6 +731,11 @@ config.chain_id = 'beeab0de00000000000000000000000000000000000000000000000000000
     <tr><td><code>restNodes</code></td><td>URL array with no trailing slash</td><td>Public REST nodes</td></tr>
     <tr><td><code>timeout</code></td><td>milliseconds</td><td>10000</td></tr>
     <tr><td><code>retry</code></td><td>count</td><td>8</td></tr>
+    <tr><td><code>healthchecks</code></td><td><code>hived</code>, <code>hivemind</code>, <code>hafah</code></td><td>empty (off)</td></tr>
+    <tr><td><code>healthcheckInterval</code></td><td>milliseconds</td><td>30000</td></tr>
+    <tr><td><code>healthcheckMaxLag</code></td><td>milliseconds</td><td>30000</td></tr>
+    <tr><td><code>cacheTtl</code></td><td>milliseconds</td><td>2000</td></tr>
+    <tr><td><code>cacheMethods</code></td><td>JSON-RPC method names</td><td>dynamic global properties</td></tr>
     <tr><td><code>address_prefix</code></td><td>string</td><td><code>STM</code></td></tr>
     <tr><td><code>chain_id</code></td><td>64 hex characters</td><td>Hive mainnet chain id</td></tr>
   </tbody>
@@ -809,7 +838,7 @@ PAGES["migrate"] = (
     <tr><td><code>new Transaction(tx)</code></td><td><code>new Transaction({ transaction, expiration })</code></td></tr>
     <tr><td><code>Transaction.signedTransaction</code></td><td><code>Transaction.transaction</code></td></tr>
     <tr><td><code>config.node</code> string</td><td><code>config.nodes</code> array</td></tr>
-    <tr><td><code>config.healthcheckInterval</code></td><td>Removed</td></tr>
+    <tr><td><code>config.healthcheckInterval</code></td><td>Off until <code>config.healthchecks</code> is set. Default 30000 milliseconds. Optional checks are <code>hived</code>, <code>hivemind</code>, and <code>hafah</code>.</td></tr>
   </tbody>
 </table>
 <h2>Create a transaction</h2>
@@ -859,6 +888,13 @@ PAGES["reference"] = (
   callRPC,
   callREST,
   callWithQuorum,
+  checkNode,
+  checkNodes,
+  getNodeHealth,
+  startNodeHealthcheck,
+  stopNodeHealthcheck,
+  clearNodeHealth,
+  clearCallCache,
   config,
   utils
 } from 'hive-tx'</code></pre>
@@ -883,7 +919,15 @@ PAGES["reference"] = (
   status: 'unknown' | 'within_irreversible_block' | 'expired_irreversible' | 'too_old'
 }</code></pre>
 <h2>callRPC</h2>
-<p><code>callRPC(method, params?, timeout?, retry?): Promise&lt;T&gt;</code></p>
+<p><code>callRPC(method, params?, timeout?, retry?, options?): Promise&lt;T&gt;</code></p>
+<p><code>options.cacheTtl</code> is a millisecond TTL. <code>0</code> skips the local cache.</p>
+<h2>Health and cache</h2>
+<p><code>checkNode(url, services?): Promise&lt;NodeHealth&gt;</code></p>
+<p><code>checkNodes(services?): Promise&lt;NodeHealth[]&gt;</code></p>
+<p><code>getNodeHealth(): NodeHealth[]</code></p>
+<p><code>startNodeHealthcheck()</code> and <code>stopNodeHealthcheck()</code></p>
+<p><code>clearNodeHealth()</code> and <code>clearCallCache()</code></p>
+<p><code>services</code> is any mix of <code>'hived'</code>, <code>'hivemind'</code>, and <code>'hafah'</code>.</p>
 <h2>callWithQuorum</h2>
 <p><code>callWithQuorum(method, params?, quorum?): Promise&lt;T&gt;</code></p>
 <h2>callREST</h2>

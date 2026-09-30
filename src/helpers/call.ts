@@ -1,83 +1,59 @@
 import { config } from '../config.js'
-import { APIMethods, APIPaths, CallResponse } from '../types.js'
+import { APIMethods, APIPaths } from '../types.js'
+import { callCacheKey, readCallCache, writeCallCache } from './cache.js'
+import {
+  markNodeUnhealthy,
+  preferHealthy,
+  prepareNodeHealth,
+  selectHealthyUrl
+} from './healthcheck.js'
+import { jsonRPCCall, RPCError } from './jsonrpc.js'
+
+export { RPCError }
 
 let rpcIndex = 0
 let restIndex = 0
 let rpcTries = 0
 let restTries = 0
 
-export class RPCError extends Error {
-  name = 'RPCError'
-  data?: any
-  code: number
-  stack: undefined = undefined
-  constructor(rpcError: { message: string; code: number; data?: any }) {
-    super(rpcError.message)
-    this.code = rpcError.code
-    if ('data' in rpcError) {
-      this.data = rpcError.data
-    }
-  }
+/** Per-call cache control for {@link callRPC}. */
+export interface CallRPCOptions {
+  /**
+   * Cache TTL in milliseconds for this call.
+   * `0` skips the local cache.
+   * Omit to use `config.cacheTtl` when `method` is listed in `config.cacheMethods`.
+   */
+  cacheTtl?: number
 }
 
-/** shoudRetry is false by default - i.e. no retry
- * on true, retry one more time
- */
-const jsonRPCCall = async (
-  url: string,
-  method: string,
-  params: any,
-  timeout = config.timeout,
-  shouldRetry = false
-) => {
-  const id = Math.floor(Math.random() * 100_000_000)
-  const body = {
-    jsonrpc: '2.0',
-    method,
-    params,
-    id
+const resolveCacheTtl = (method: string, options?: CallRPCOptions) => {
+  if (options && options.cacheTtl !== undefined) {
+    return options.cacheTtl
   }
-  try {
-    const res = await fetch(url, {
-      method: 'POST',
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(timeout)
-    })
-    const result = (await res.json()) as CallResponse
-    if (
-      !result ||
-      typeof result.id === 'undefined' ||
-      result.id !== id ||
-      result.jsonrpc !== '2.0'
-    ) {
-      throw new Error('JSONRPC id mismatch')
-    }
-    if ('result' in result) {
-      return result.result
-    }
-    if ('error' in result) {
-      const e = result.error
-      if (
-        'message' in e &&
-        'code' in e &&
-        !e.message.toLowerCase().includes('Unable to send request to endpoint'.toLowerCase())
-      ) {
-        throw new RPCError(e)
-      }
-      throw result.error
-    }
-    // No result and no error?
-    throw result
-  } catch (e) {
-    if (e instanceof RPCError) {
-      throw e
-    }
-    if (shouldRetry) {
-      return jsonRPCCall(url, method, params, timeout, false)
-    }
-    throw e
+  if (!config.cacheMethods.includes(method)) {
+    return 0
   }
+  return config.cacheTtl
+}
+
+const selectRpcNode = async () => {
+  await prepareNodeHealth()
+  const picked = selectHealthyUrl(config.nodes, rpcIndex)
+  if (picked) {
+    rpcIndex = picked.index
+    return picked.url
+  }
+  return config.nodes[rpcIndex]
+}
+
+const selectRestNode = async () => {
+  await prepareNodeHealth()
+  const picked = selectHealthyUrl(config.restNodes, restIndex)
+  if (picked) {
+    restIndex = picked.index
+    return picked.url
+  }
+  return config.restNodes[restIndex]
 }
 
 /**
@@ -91,6 +67,7 @@ const jsonRPCCall = async (
  * @param params - Parameters for the API method as array or object
  * @param timeout - Request timeout in milliseconds (default: config.timeout)
  * @param retry - Number of retry attempts before throwing an error (default: config.retry)
+ * @param options - Optional cache control. See {@link CallRPCOptions}.
  * @returns Promise resolving to the API response
  * @throws Error if all retry attempts fail or on RPCError
  *
@@ -109,27 +86,43 @@ export const callRPC = async <T = any>(
   method: string,
   params: any[] | object = [],
   timeout = config.timeout,
-  retry = config.retry
+  retry = config.retry,
+  options?: CallRPCOptions
 ): Promise<T> => {
   if (!Array.isArray(config.nodes)) {
     throw new Error('config.nodes is not an array')
   }
-  const node = config.nodes[rpcIndex]
+  const ttl = resolveCacheTtl(method, options)
+  const key = callCacheKey(method, params)
+  if (ttl > 0) {
+    const cached = readCallCache<T>(key, ttl)
+    if (cached !== undefined) {
+      rpcTries = 0
+      return cached
+    }
+  }
+  const node = await selectRpcNode()
   try {
     const res = await jsonRPCCall(node, method, params, timeout)
     rpcTries = 0
+    if (ttl > 0 && res !== undefined) {
+      writeCallCache(key, res)
+    }
     return res as T
   } catch (e: any) {
     // Throw on actual RPC errors
     if (e instanceof RPCError) {
       throw e
     }
+    if (config.healthchecks.length) {
+      markNodeUnhealthy(node)
+    }
     rpcTries++
     if (rpcTries > retry) {
       throw e
     }
     changeRPCNode()
-    return callRPC(method, params, timeout, retry)
+    return callRPC(method, params, timeout, retry, options)
   }
 }
 
@@ -218,7 +211,7 @@ export async function callREST<Api extends APIMethods, P extends keyof APIPaths[
   if (!Array.isArray(config.restNodes)) {
     throw new Error('config.restNodes is not an array')
   }
-  const node = config.restNodes[restIndex]
+  const node = await selectRestNode()
   const baseUrl = node + apiMethods[api]
   let path = endpoint as string
   const paramObj = params || ({} as Record<string, any>)
@@ -256,6 +249,9 @@ export async function callREST<Api extends APIMethods, P extends keyof APIPaths[
     if (response?.status === 404) {
       throw e
     }
+    if (config.healthchecks.length) {
+      markNodeUnhealthy(node)
+    }
     restTries++
     if (restTries > retry) {
       throw e
@@ -283,9 +279,10 @@ export const callWithQuorum = async <T = any>(
   if (quorum > config.nodes.length) {
     throw new Error('quorum > config.nodes.length')
   }
+  await prepareNodeHealth()
   // We call random nodes for better security
   const shuffleNodes = (arr: string[]) => [...arr].sort(() => Math.random() - 0.5)
-  let allNodes = shuffleNodes(config.nodes)
+  let allNodes = preferHealthy(shuffleNodes(config.nodes), quorum)
   let currentBatchSize = Math.min(quorum, allNodes.length)
   let allResults: any[] = []
   while (currentBatchSize > 0 && allNodes.length > 0) {
