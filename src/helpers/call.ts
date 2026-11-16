@@ -148,7 +148,17 @@ export const callRPC = async <T = any>(
   return withRPCFailover((node) => jsonRPCCall(node, method, params, timeout), retry)
 }
 
-/** Like `callRPC`, but calls `method` once per entry of `paramsList` in a single JSON-RPC batch request */
+/**
+ * Like `callRPC`, but calls `method` once per entry of `paramsList` in a single JSON-RPC batch request.
+ * Results keep the order of `paramsList`. Throws `RPCError` if any call in the batch fails.
+ *
+ * @example
+ * ```typescript
+ * import { callRPCBatch } from 'hive-tx'
+ *
+ * const [first, second] = await callRPCBatch('condenser_api.get_block', [[1], [2]])
+ * ```
+ */
 export const callRPCBatch = async <T = any>(
   method: string,
   paramsList: unknown[],

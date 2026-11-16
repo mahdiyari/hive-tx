@@ -9,6 +9,7 @@ import {
   callREST,
   config,
   callRPC,
+  callRPCBatch,
   callWithQuorum,
   streamBlocks,
   streamBlockNumbers,
@@ -351,6 +352,11 @@ export const coverageTests = async () => {
     } finally {
       config.nodes = temp
     }
+  })
+
+  await runTest('callRPCBatch() returns results in params order', async () => {
+    const blocks = await callRPCBatch('condenser_api.get_block', [[3], [1], [2]])
+    return blocks.map((b) => parseInt(b.block_id.slice(0, 8), 16)).join() === '3,1,2'
   })
 
   await runTest('callWithQuorum(condenser_api.get_accounts)', async () => {

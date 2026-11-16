@@ -61,6 +61,7 @@
   Signature,
   Memo,
   callRPC,
+  callRPCBatch,
   callREST,
   callWithQuorum,
   RPCError,
@@ -90,6 +91,8 @@
 }</code></pre>
 <h2>callRPC</h2>
 <p><code>callRPC(method, params?, timeout?, retry?): Promise&lt;T&gt;</code></p>
+<h2>callRPCBatch</h2>
+<p><code>callRPCBatch(method, paramsList, timeout?, retry?): Promise&lt;T[]&gt;</code></p>
 <h2>callWithQuorum</h2>
 <p><code>callWithQuorum(method, params?, quorum?): Promise&lt;T&gt;</code></p>
 <h2>callREST</h2>

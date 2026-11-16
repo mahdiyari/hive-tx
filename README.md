@@ -10,7 +10,7 @@
 Lightweight TypeScript SDK for the Hive blockchain. No runtime dependencies, ~32 KB minified and gzipped. Works in Node.js, browsers, workers, and serverless runtimes.
 
 - Build, sign, and broadcast transactions, typed per operation
-- JSON-RPC with automatic node failover, plus quorum calls that cross-check nodes
+- JSON-RPC with automatic node failover, batch requests, and quorum calls that cross-check nodes
 - Typed REST APIs: balance, hafah, hafbe, hivemind, and more
 - Gap-free streams of blocks, block numbers, and operations (virtual included)
 - Keys, signatures, and encrypted memos
