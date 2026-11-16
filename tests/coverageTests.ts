@@ -236,7 +236,9 @@ export const coverageTests = async () => {
   await runTest('Memo.encodeForAccount', async () => {
     const sender = PrivateKey.randomKey()
     const encoded = await Memo.encodeForAccount(sender, 'mahdiyari', '#hello')
-    const missing = await Memo.encodeForAccount(sender, 'no-such-acct-x1', '#x').catch((e) => e.message)
+    const missing = await Memo.encodeForAccount(sender, 'no-such-acct-x1', '#x').catch(
+      (e) => e.message
+    )
     // the sender can decrypt too, which proves it used the account's memo key pair
     return (
       encoded.startsWith('#') &&
@@ -322,7 +324,9 @@ export const coverageTests = async () => {
       utils.parseAsset('abc')
       return false
     } catch {
-      return str.amount === 1.5 && str.symbol === 'HIVE' && nai.amount === 1.5 && nai.symbol === 'HBD'
+      return (
+        str.amount === 1.5 && str.symbol === 'HIVE' && nai.amount === 1.5 && nai.symbol === 'HBD'
+      )
     }
   })
 
@@ -359,26 +363,39 @@ export const coverageTests = async () => {
   })
 
   await runTest('utils helpers fetch by name with one cached request', async () => {
+    // A fake node, so the request count does not depend on live nodes failing over
     const realFetch = globalThis.fetch
-    let requests = 0
-    globalThis.fetch = (...args) => {
-      requests++
-      return realFetch(...args)
+    const requests: string[] = []
+    globalThis.fetch = async (_input: string | URL | Request, init?: RequestInit) => {
+      const { id, method, params } = JSON.parse(String(init?.body))
+      requests.push(method)
+      const result =
+        method === 'rc_api.find_rc_accounts'
+          ? {
+              rc_accounts: [{ max_rc: 100, rc_manabar: { current_mana: 100, last_update_time: 0 } }]
+            }
+          : params[0][0] === 'cache-test-ok'
+            ? [stakeAccount]
+            : []
+      return Response.json({ jsonrpc: '2.0', id, result })
     }
     try {
       const [up, down] = await Promise.all([
-        utils.getVotingMana('hiveio'),
-        utils.getDownvoteMana('hiveio')
+        utils.getVotingMana('cache-test-ok'),
+        utils.getDownvoteMana('cache-test-ok')
       ])
-      const rc = await utils.getRCMana('hiveio')
-      // valid but unregistered name; names over 16 characters are rejected by the node instead
-      const missing = await utils.getVotingMana('no-such-acct-x1').catch((e) => e.message)
+      const again = await utils.getEffectiveVests('cache-test-ok')
+      const rc = await utils.getRCMana('cache-test-ok')
+      const missing = await utils.getVotingMana('cache-test-no').catch((e) => e.message)
       return (
-        requests === 3 &&
-        up.max > 0 &&
-        down.max === Math.floor(up.max * 0.25) &&
-        rc.max > 0 &&
-        missing === 'Account not found: no-such-acct-x1'
+        // one get_accounts shared by three helpers, one rc_api call, one lookup that finds nothing
+        requests.join() ===
+          'condenser_api.get_accounts,rc_api.find_rc_accounts,condenser_api.get_accounts' &&
+        up.max === chainMaxMana &&
+        down.max === Math.floor(chainMaxMana * 0.25) &&
+        Math.abs(again * 1e6 - chainMaxMana) < 1 &&
+        rc.max === 100 &&
+        missing === 'Account not found: cache-test-no'
       )
     } finally {
       globalThis.fetch = realFetch
@@ -483,7 +500,8 @@ export const coverageTests = async () => {
       json(utils.reblog('a', 'b', 'p')) ===
         'follow ["reblog",{"account":"a","author":"b","permlink":"p"}]' &&
       json(utils.subscribe('a', 'hive-1')) === 'community ["subscribe",{"community":"hive-1"}]' &&
-      json(utils.unsubscribe('a', 'hive-1')) === 'community ["unsubscribe",{"community":"hive-1"}]' &&
+      json(utils.unsubscribe('a', 'hive-1')) ===
+        'community ["unsubscribe",{"community":"hive-1"}]' &&
       utils.follow('a', 'b')[1].required_posting_auths[0] === 'a'
     )
   })
