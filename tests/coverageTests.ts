@@ -1,3 +1,4 @@
+import { isDeepStrictEqual } from 'node:util'
 import {
   Transaction,
   PrivateKey,
@@ -8,7 +9,13 @@ import {
   callREST,
   config,
   callRPC,
-  callWithQuorum
+  callWithQuorum,
+  streamBlocks,
+  streamBlockNumbers,
+  streamOperations,
+  type AppliedOperation,
+  type Block,
+  type Operation
 } from 'hive-tx'
 
 // Test data
@@ -400,6 +407,75 @@ export const coverageTests = async () => {
     }
   })
 
+  console.log('Testing streamBlocks...')
+
+  await runTest('streamBlockNumbers() yields a past range in order and stops', async () => {
+    const nums: number[] = []
+    for await (const num of streamBlockNumbers({ from: 90000000, to: 90000044 })) {
+      nums.push(num)
+    }
+    return nums.length === 45 && nums.every((num, i) => num === 90000000 + i)
+  })
+
+  await runTest('streamBlockNumbers() follows new blocks', async () => {
+    const nums: number[] = []
+    for await (const num of streamBlockNumbers()) {
+      nums.push(num)
+      if (nums.length === 2) break
+    }
+    return nums[1] === nums[0] + 1
+  })
+
+  await runTest('streamBlocks() yields a past range in order and stops', async () => {
+    const blocks: Block[] = []
+    for await (const block of streamBlocks({ from: 90000000, to: 90000049 })) {
+      blocks.push(block)
+    }
+    return (
+      blocks.length === 50 &&
+      blocks.every(
+        (b, i) =>
+          b.block_num === 90000000 + i &&
+          parseInt(b.block_id.slice(0, 8), 16) === b.block_num &&
+          (i === 0 || b.previous === blocks[i - 1].block_id)
+      )
+    )
+  })
+
+  await runTest('streamBlocks() follows new blocks', async () => {
+    const nums = []
+    for await (const block of streamBlocks()) {
+      nums.push(block.block_num)
+      if (nums.length === 2) break
+    }
+    return nums[1] === nums[0] + 1
+  })
+
+  await runTest('streamOperations() matches block operations plus virtual ones', async () => {
+    const range = { from: 90000000, to: 90000004 }
+    const blockOps: Operation[] = []
+    for await (const block of streamBlocks(range)) {
+      for (const tx of block.transactions) blockOps.push(...tx.operations)
+    }
+    const ops: AppliedOperation[] = []
+    for await (const op of streamOperations(range)) ops.push(op)
+    const virtualOps: AppliedOperation[] = []
+    for await (const op of streamOperations({ ...range, only_virtual: true })) virtualOps.push(op)
+    const real = ops.filter((o) => !o.virtual_op)
+    return (
+      // The two APIs order object keys differently
+      isDeepStrictEqual(
+        real.map((o) => o.op),
+        blockOps
+      ) &&
+      virtualOps.length === ops.length - real.length &&
+      virtualOps.every((o) => o.virtual_op) &&
+      new Set(ops.map((o) => o.block)).size === 5
+    )
+  })
+
   console.log(`\nCoverage tests completed: ${passedTests}/${totalTests} passed`)
-  return passedTests === totalTests
+  if (passedTests !== totalTests) {
+    throw new Error(`${totalTests - passedTests} coverage test(s) failed`)
+  }
 }

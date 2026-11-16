@@ -64,6 +64,7 @@
   callREST,
   callWithQuorum,
   RPCError,
+  streamBlocks,
   config,
   utils
 } from 'hive-tx'</code></pre>
@@ -93,6 +94,12 @@
 <p><code>callWithQuorum(method, params?, quorum?): Promise&lt;T&gt;</code></p>
 <h2>callREST</h2>
 <p><code>callREST(api, endpoint, params?, timeout?, retry?): Promise&lt;...&gt;</code></p>
+<h2>streamBlocks</h2>
+<p><code>streamBlocks({ from?, to? }): AsyncGenerator&lt;Block&gt;</code></p>
+<h2>streamBlockNumbers</h2>
+<p><code>streamBlockNumbers({ from?, to? }): AsyncGenerator&lt;number&gt;</code></p>
+<h2>streamOperations</h2>
+<p><code>streamOperations({ from?, to?, only_virtual? }): AsyncGenerator&lt;AppliedOperation&gt;</code></p>
 <h2>Memo</h2>
 <p><code>Memo.encode(privateKey, publicKey, memo): string</code></p>
 <p><code>Memo.decode(privateKey, memo): string</code></p>

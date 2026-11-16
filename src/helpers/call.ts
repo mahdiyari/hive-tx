@@ -18,6 +18,39 @@ export class RPCError extends Error {
   }
 }
 
+const post = async (url: string, body: unknown, timeout: number): Promise<unknown> => {
+  const res = await fetch(url, {
+    method: 'POST',
+    body: JSON.stringify(body),
+    headers: { 'Content-Type': 'application/json' },
+    signal: AbortSignal.timeout(timeout)
+  })
+  return res.json()
+}
+
+/** Returns the result of a JSON-RPC response, or throws its error */
+const readResult = (response: CallResponse | undefined, id: number) => {
+  if (!response || response.id !== id || response.jsonrpc !== '2.0') {
+    throw new Error('JSONRPC id mismatch')
+  }
+  if ('result' in response) {
+    return response.result
+  }
+  if ('error' in response) {
+    const e = response.error
+    if (
+      'message' in e &&
+      'code' in e &&
+      !e.message.toLowerCase().includes('Unable to send request to endpoint'.toLowerCase())
+    ) {
+      throw new RPCError(e)
+    }
+    throw response.error
+  }
+  // No result and no error?
+  throw response
+}
+
 /** shoudRetry is false by default - i.e. no retry
  * on true, retry one more time
  */
@@ -29,44 +62,9 @@ const jsonRPCCall = async (
   shouldRetry = false
 ) => {
   const id = Math.floor(Math.random() * 100_000_000)
-  const body = {
-    jsonrpc: '2.0',
-    method,
-    params,
-    id
-  }
   try {
-    const res = await fetch(url, {
-      method: 'POST',
-      body: JSON.stringify(body),
-      headers: { 'Content-Type': 'application/json' },
-      signal: AbortSignal.timeout(timeout)
-    })
-    const result = (await res.json()) as CallResponse
-    if (
-      !result ||
-      typeof result.id === 'undefined' ||
-      result.id !== id ||
-      result.jsonrpc !== '2.0'
-    ) {
-      throw new Error('JSONRPC id mismatch')
-    }
-    if ('result' in result) {
-      return result.result
-    }
-    if ('error' in result) {
-      const e = result.error
-      if (
-        'message' in e &&
-        'code' in e &&
-        !e.message.toLowerCase().includes('Unable to send request to endpoint'.toLowerCase())
-      ) {
-        throw new RPCError(e)
-      }
-      throw result.error
-    }
-    // No result and no error?
-    throw result
+    const response = await post(url, { jsonrpc: '2.0', method, params, id }, timeout)
+    return readResult(response as CallResponse, id)
   } catch (e) {
     if (e instanceof RPCError) {
       throw e
@@ -75,6 +73,44 @@ const jsonRPCCall = async (
       return jsonRPCCall(url, method, params, timeout, false)
     }
     throw e
+  }
+}
+
+/** Calls `method` once per entry of `paramsList` in one HTTP request; results keep that order */
+const jsonRPCBatch = async (
+  url: string,
+  method: string,
+  paramsList: unknown[],
+  timeout: number
+) => {
+  const body = paramsList.map((params, id) => ({ jsonrpc: '2.0', method, params, id }))
+  const responses = await post(url, body, timeout)
+  if (!Array.isArray(responses)) {
+    throw new Error('JSONRPC batch request not supported')
+  }
+  return body.map(({ id }) =>
+    readResult(
+      responses.find((r) => r?.id === id),
+      id
+    )
+  )
+}
+
+/** Sends `request` to the current node, moving to the next node on network or node failure */
+const withRPCFailover = async <T>(request: (node: string) => Promise<T>, retry: number) => {
+  if (!Array.isArray(config.nodes)) {
+    throw new Error('config.nodes is not an array')
+  }
+  for (let tries = 0; ; tries++) {
+    try {
+      return await request(config.nodes[rpcIndex])
+    } catch (e) {
+      // RPC errors come from the chain; another node would give the same answer
+      if (e instanceof RPCError || tries >= retry) {
+        throw e
+      }
+      changeRPCNode()
+    }
   }
 }
 
@@ -109,20 +145,17 @@ export const callRPC = async <T = any>(
   timeout = config.timeout,
   retry = config.retry
 ): Promise<T> => {
-  if (!Array.isArray(config.nodes)) {
-    throw new Error('config.nodes is not an array')
-  }
-  for (let tries = 0; ; tries++) {
-    try {
-      return await jsonRPCCall(config.nodes[rpcIndex], method, params, timeout)
-    } catch (e) {
-      // RPC errors come from the chain; another node would give the same answer
-      if (e instanceof RPCError || tries >= retry) {
-        throw e
-      }
-      changeRPCNode()
-    }
-  }
+  return withRPCFailover((node) => jsonRPCCall(node, method, params, timeout), retry)
+}
+
+/** Like `callRPC`, but calls `method` once per entry of `paramsList` in a single JSON-RPC batch request */
+export const callRPCBatch = async <T = any>(
+  method: string,
+  paramsList: unknown[],
+  timeout = config.timeout,
+  retry = config.retry
+): Promise<T[]> => {
+  return withRPCFailover((node) => jsonRPCBatch(node, method, paramsList, timeout), retry)
 }
 
 const apiMethods: Record<APIMethods, string> = {

@@ -31,6 +31,8 @@ export interface paths {
                 name: string
                 /** @description URL path for the API */
                 url_path: string
+                /** @description Version of the application */
+                version: string
                 /**
                  * @description Health status of the service
                  * @enum {string}
@@ -95,6 +97,8 @@ export interface paths {
               name: string
               /** @description URL path for the API */
               url_path: string
+              /** @description Version of the application */
+              version: string
               /**
                * @description Health status of the service
                * @enum {string}

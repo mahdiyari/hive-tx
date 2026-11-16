@@ -389,6 +389,42 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/sync-status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get hafah's sync status
+     * @description Get the last block for which HAfAH data is available, as an object
+     *     containing both the block number and its timestamp (UTC). This is the
+     *     uniform HAF-app sync/health endpoint: the timestamp lets a consumer
+     *     compute staleness with a single call (`age = now() - last_block_time`)
+     *     without needing a separate head-block reference.
+     *
+     *     HAfAH serves account history directly from HAF's own tables and has no
+     *     app-specific sync process, so its data freshness is HAF's freshness:
+     *     this endpoint reports HAF's consistent (last irreversible) block. For
+     *     HAfAH, "synced" means the HAF database itself is synced (its last
+     *     irreversible block is recent).
+     *
+     *     SQL example
+     *     * `SELECT * FROM hafah_endpoints.get_sync_status();`
+     *
+     *     REST call example
+     *     * `GET 'https://rpc.mahdiyari.info/hafah-api/sync-status'`
+     */
+    get: operations['hafah_endpoints.get_sync_status']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   '/global-state': {
     parameters: {
       query?: never
@@ -444,7 +480,7 @@ export interface components {
       /** @description block containing the operation */
       block?: number
       /** @description hash of the transaction */
-      trx_id?: string
+      trx_id?: string | null
       /** @description operation identifier that indicates its sequence number in transaction */
       op_pos?: number
       /** @description operation type identifier */
@@ -1231,7 +1267,7 @@ export interface operations {
          */
         'operation-group-type'?: components['schemas']['hafah_backend.operation_group_types']
         /** @description Starting operation id */
-        'operation-begin'?: number
+        'operation-begin'?: string
         /**
          * @description A limit of retrieved operations per page,
          *     up to 150000
@@ -1440,7 +1476,7 @@ export interface operations {
          *
          *      * type (operation type) - occupies 8 bits.
          */
-        'operation-id': number
+        'operation-id': string
       }
       cookie?: never
     }
@@ -2081,6 +2117,48 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+    }
+  }
+  'hafah_endpoints.get_sync_status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /**
+       * @description HAF's consistent (last irreversible) block and its timestamp.
+       *     `last_block_time` is null if HAF has no consistent block yet.
+       *     While the HAF instance is still in massive sync (indexes not yet
+       *     built) the call fails fast with an error rather than executing an
+       *     unindexed lookup.
+       *
+       *     * Returns `JSON`
+       */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "last_block_num": 5000000,
+           *       "last_block_time": "2016-09-15T19:47:21"
+           *     }
+           */
+          'application/json': {
+            /** @description HAF's consistent (last irreversible) block number */
+            last_block_num?: number
+            /**
+             * Format: date-time
+             * @description UTC timestamp of that block
+             */
+            last_block_time?: string
+          }
+        }
       }
     }
   }
