@@ -286,6 +286,110 @@ export const coverageTests = async () => {
     )
   })
 
+  console.log('Testing utils chain math...')
+
+  // Snapshot of a powering-down account from condenser_api.get_accounts
+  const stakeAccount = {
+    vesting_shares: '177805832.499280 VESTS',
+    delegated_vesting_shares: '619129.407589 VESTS',
+    received_vesting_shares: '0.000000 VESTS',
+    vesting_withdraw_rate: '12398735.810485 VESTS',
+    to_withdraw: 161183565536299,
+    withdrawn: 123987358104850,
+    voting_manabar: { current_mana: 153710560566990, last_update_time: 1794864276 },
+    downvote_manabar: { current_mana: 41196991820301, last_update_time: 1794864276 }
+  }
+  // The chain's max_rc for the same account is effective vests - delegated RC + creation adjustment
+  const chainMaxMana = 152525900134202 + 12264087895977 - 2020748973
+
+  await runTest('utils.parseAsset (string and NAI)', () => {
+    const str = utils.parseAsset('1.500 HIVE')
+    const nai = utils.parseAsset({ amount: '1500', precision: 3, nai: '@@000000013' })
+    try {
+      utils.parseAsset('abc')
+      return false
+    } catch {
+      return str.amount === 1.5 && str.symbol === 'HIVE' && nai.amount === 1.5 && nai.symbol === 'HBD'
+    }
+  })
+
+  await runTest('utils.vestsToHP and utils.hpToVests', () => {
+    const props = {
+      total_vesting_fund_hive: '218384825.222 HIVE',
+      total_vesting_shares: '349994535499.081394 VESTS'
+    }
+    const hp = utils.vestsToHP('349994535499.081394 VESTS', props)
+    return hp === 218384825.222 && Math.abs(utils.hpToVests(utils.vestsToHP(1000, props), props) - 1000) < 1e-9
+  })
+
+  await runTest('utils mana matches chain values', () => {
+    const at = (seconds: number) => (1794864276 + seconds) * 1000
+    const up = utils.getVotingMana(stakeAccount, at(0))
+    const down = utils.getDownvoteMana(stakeAccount, at(0))
+    const rc = utils.getRCMana(
+      { max_rc: 100, rc_manabar: { current_mana: 50, last_update_time: 1794864276 } },
+      at(43200)
+    )
+    return (
+      up.max === chainMaxMana &&
+      up.current === 153710560566990 &&
+      // one hour regenerates max / 120
+      utils.getVotingMana(stakeAccount, at(3600)).current === 155083793627666 &&
+      utils.getVotingMana(stakeAccount, at(432000)).percentage === 100 &&
+      down.max === 41196991820301 &&
+      down.percentage === 100 &&
+      rc.current === 60 &&
+      rc.percentage === 60
+    )
+  })
+
+  await runTest('utils.getVoteRShares matches an on-chain vote', () => {
+    // A 5.34% vote by a powering-down account; the chain gave it 636980901 rshares
+    const voter = {
+      vesting_shares: '692587.108537 VESTS',
+      delegated_vesting_shares: '0.000000 VESTS',
+      received_vesting_shares: '0.000000 VESTS',
+      vesting_withdraw_rate: '49346.564795 VESTS',
+      to_withdraw: 641505342326,
+      withdrawn: 246732823975,
+      voting_manabar: { current_mana: 642553562841, last_update_time: 1794864393 },
+      downvote_manabar: { current_mana: 160810135935, last_update_time: 1794864393 }
+    }
+    return (
+      utils.getVoteRShares(voter, 534) === 636980901 &&
+      utils.getVoteRShares(voter, -534) === -636980901 &&
+      // below the dust threshold a vote adds nothing
+      utils.getVoteRShares(voter, 1) === 0
+    )
+  })
+
+  await runTest('utils.getVoteValue', () => {
+    const fund = { reward_balance: '1000.000 HIVE', recent_claims: '1000000000000' }
+    const price = { base: '0.250 HBD', quote: '1.000 HIVE' }
+    // a full vote on chainMaxMana: 2% of max mana minus dust, as a share of the pool, in HBD
+    const rshares = Math.ceil(chainMaxMana * 0.02) - 50_000_000
+    const expected = ((rshares * 1000) / 1e12) * 0.25
+    return Math.abs(utils.getVoteValue(stakeAccount, fund, price) - expected) < 1e-9
+  })
+
+  await runTest('utils.formatReputation', () => {
+    return (
+      Math.floor(utils.formatReputation('225722985673795')) === 73 &&
+      utils.formatReputation(0) === 25 &&
+      utils.formatReputation(-1234567890123) < 0
+    )
+  })
+
+  await runTest('utils.createPermlink', () => {
+    const permlink = utils.createPermlink('Héllo, Wörld — Café!')
+    const reply = utils.createPermlink()
+    return (
+      /^hello-world-cafe-[0-9a-f]{12}$/.test(permlink) &&
+      /^[0-9a-f]{12}$/.test(reply) &&
+      reply !== utils.createPermlink()
+    )
+  })
+
   // Transaction additional tests
   console.log('Testing Transaction extras...')
 

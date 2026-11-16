@@ -1,7 +1,9 @@
 import { Serializer } from './serializer.js'
 import { ByteBuffer } from './ByteBuffer.js'
 import { PublicKey } from './PublicKey.js'
-import { bytesToHex } from '@noble/hashes/utils.js'
+import { bytesToHex, randomBytes } from '@noble/hashes/utils.js'
+
+export * from './chainMath.js'
 
 export interface WitnessProps {
   account_creation_fee?: string
@@ -215,4 +217,20 @@ const serialize = (serializer: any, data: any) => {
   buffer.flip()
   // `props` values must be hex
   return bytesToHex(new Uint8Array(buffer.toBuffer()))
+}
+
+/**
+ * Makes a permlink from a title with a random suffix, e.g. `"hello-world-3f9a1c0b7e2d"`.
+ * Without a title (e.g. for replies), returns only the random part.
+ */
+export const createPermlink = (title = ''): string => {
+  const slug = title
+    .normalize('NFKD')
+    .replace(/[\u0300-\u036f]/g, '') // strip accents: "café" -> "cafe"
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .slice(0, 200)
+    .replace(/^-+|-+$/g, '')
+  const suffix = bytesToHex(randomBytes(6))
+  return slug ? `${slug}-${suffix}` : suffix
 }
