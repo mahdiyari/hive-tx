@@ -475,5 +475,7 @@ export const coverageTests = async () => {
   })
 
   console.log(`\nCoverage tests completed: ${passedTests}/${totalTests} passed`)
-  return passedTests === totalTests
+  if (passedTests !== totalTests) {
+    throw new Error(`${totalTests - passedTests} coverage test(s) failed`)
+  }
 }

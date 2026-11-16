@@ -424,6 +424,9 @@ export const operationTests = async () => {
       }
     }
   }
+  if (passedCount !== opTypes.length) {
+    throw new Error(`${opTypes.length - passedCount} operation test(s) failed`)
+  }
 }
 
 const getAllOperationsFromHafsql = async () => {

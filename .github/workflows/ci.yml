@@ -31,6 +31,10 @@ jobs:
       - name: Run build
         run: npm run build
 
+      # The build does not type-check
+      - name: Type check
+        run: npx tsc --noEmit
+
       - name: Run tests
         run: npm test
         timeout-minutes: 5
