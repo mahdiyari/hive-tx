@@ -458,6 +458,54 @@ export type Operation =
 export type OperationName = Operation[0]
 export type OperationBody<O extends OperationName> = Extract<Operation, [O, any]>[1]
 
+export type VirtualOperationName =
+  | 'fill_convert_request'
+  | 'author_reward'
+  | 'curation_reward'
+  | 'comment_reward'
+  | 'liquidity_reward'
+  | 'interest'
+  | 'fill_vesting_withdraw'
+  | 'fill_order'
+  | 'shutdown_witness'
+  | 'fill_transfer_from_savings'
+  | 'hardfork'
+  | 'comment_payout_update'
+  | 'return_vesting_delegation'
+  | 'comment_benefactor_reward'
+  | 'producer_reward'
+  | 'clear_null_account_balance'
+  | 'proposal_pay'
+  | 'dhf_funding'
+  | 'hardfork_hive'
+  | 'hardfork_hive_restore'
+  | 'delayed_voting'
+  | 'consolidate_treasury_balance'
+  | 'effective_comment_vote'
+  | 'ineffective_delete_comment'
+  | 'dhf_conversion'
+  | 'expired_account_notification'
+  | 'changed_recovery_account'
+  | 'transfer_to_vesting_completed'
+  | 'pow_reward'
+  | 'vesting_shares_split'
+  | 'account_created'
+  | 'fill_collateralized_convert_request'
+  | 'system_warning'
+  | 'fill_recurrent_transfer'
+  | 'failed_recurrent_transfer'
+  | 'limit_order_cancelled'
+  | 'producer_missed'
+  | 'proposal_fee'
+  | 'collateralized_convert_immediate_conversion'
+  | 'escrow_approved'
+  | 'escrow_rejected'
+  | 'proxy_cleared'
+  | 'declined_voting_rights'
+
+/** Created by the chain itself, never broadcast. Bodies are untyped. */
+export type VirtualOperation = [VirtualOperationName, Record<string, unknown>]
+
 // Utility Types
 export interface WitnessSetPropertiesParams extends WitnessProps {}
 
@@ -471,6 +519,42 @@ export interface TransactionType {
   ref_block_num: number
   ref_block_prefix: number
   signatures: string[]
+}
+
+export interface BlockTransaction extends TransactionType {
+  operations: Operation[]
+  transaction_id: string
+  block_num: number
+  transaction_num: number
+}
+
+/** An operation as applied in a block, as returned by `get_ops_in_block` */
+export interface AppliedOperation {
+  block: number
+  /** All zeros for virtual operations that no transaction caused */
+  trx_id: string
+  /** 4294967295 for virtual operations that no transaction caused */
+  trx_in_block: number
+  /** Position within the transaction; virtual operations count too */
+  op_in_trx: number
+  virtual_op: boolean
+  timestamp: string
+  op: Operation | VirtualOperation
+}
+
+export interface Block {
+  /** Added by `streamBlocks`; the API response has no block number */
+  block_num: number
+  block_id: string
+  previous: string
+  timestamp: string
+  witness: string
+  witness_signature: string
+  signing_key: string
+  transaction_merkle_root: string
+  extensions: Extension[]
+  transaction_ids: string[]
+  transactions: BlockTransaction[]
 }
 
 // API Response Types

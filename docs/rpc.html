@@ -107,6 +107,43 @@ const balance = await callREST(
   <li><code>status</code></li>
 </ul>
 <p>A path parameter uses <code>{name}</code> in the path. Other fields become query parameters. TypeScript checks path names for each API.</p>
+<h2>Stream blocks</h2>
+<p><code>streamBlocks</code> yields irreversible blocks in order, with no gaps or duplicates. Hive blocks become irreversible within seconds, so the stream is close to real time.</p>
+<pre><code class="language-javascript">import { streamBlocks } from 'hive-tx'
+
+for await (const block of streamBlocks()) {
+  for (const tx of block.transactions) {
+    for (const [name, body] of tx.operations) {
+      if (name === 'transfer') {
+        console.log(block.block_num, tx.transaction_id, body.from, body.to, body.amount)
+      }
+    }
+  }
+}</code></pre>
+<table>
+  <thead><tr><th>Option</th><th>Default</th><th>Effect</th></tr></thead>
+  <tbody>
+    <tr><td><code>from</code></td><td>last irreversible block</td><td>First block to yield</td></tr>
+    <tr><td><code>to</code></td><td>none</td><td>Last block to yield; the stream ends after it</td></tr>
+  </tbody>
+</table>
+<p>Past blocks are fetched 20 per request. Once caught up, the stream polls every second. <code>break</code> stops the stream. If every node fails, the stream throws. Save <code>block.block_num</code> and resume with <code>from: savedNum + 1</code>.</p>
+<h2>Stream block numbers</h2>
+<p><code>streamBlockNumbers</code> yields irreversible block numbers the same way, without fetching the blocks. It takes <code>from</code> and <code>to</code> like <code>streamBlocks</code>.</p>
+<pre><code class="language-javascript">import { streamBlockNumbers } from 'hive-tx'
+
+for await (const num of streamBlockNumbers()) {
+  console.log(num)
+}</code></pre>
+<h2>Stream operations</h2>
+<p><code>streamOperations</code> yields every operation of irreversible blocks in chain order, virtual operations included, like <code>get_ops_in_block</code>. Virtual operations are created by the chain, such as rewards, order fills, and interest. Pass <code>only_virtual: true</code> to get only those.</p>
+<pre><code class="language-javascript">import { streamOperations } from 'hive-tx'
+
+for await (const { block, trx_id, op } of streamOperations()) {
+  if (op[0] === 'transfer') console.log(block, trx_id, op[1].from, op[1].amount)
+  if (op[0] === 'producer_reward') console.log(block, op[1].producer)
+}</code></pre>
+<p>It takes <code>from</code> and <code>to</code> like <code>streamBlocks</code>, plus <code>only_virtual</code> (default <code>false</code>). Each item has <code>block</code>, <code>trx_id</code>, <code>trx_in_block</code>, <code>op_in_trx</code>, <code>virtual_op</code>, <code>timestamp</code>, and <code>op</code>. To resume, pass <code>from</code> as the last block you fully handled plus one.</p>
 <h2>RPCError</h2>
 <p><code>RPCError</code> has <code>message</code>, <code>code</code>, and optional <code>data</code>.</p>
 
