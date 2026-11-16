@@ -16,8 +16,6 @@ import { DigestData } from './types.js'
 import { sleep } from './helpers/sleep.js'
 import { getDynamicGlobalProperties } from './helpers/getDynamicProps.js'
 
-const chainId = hexToBytes(config.chain_id)
-
 interface TransactionOptions {
   transaction?: TransactionType | Transaction
   /**
@@ -169,7 +167,7 @@ export class Transaction {
     buffer.flip()
     const transactionData = new Uint8Array(buffer.toBuffer())
     const txId = bytesToHex(sha256(transactionData)).slice(0, 40)
-    const digest = sha256(new Uint8Array([...chainId, ...transactionData]))
+    const digest = sha256(new Uint8Array([...hexToBytes(config.chain_id), ...transactionData]))
     return { digest, txId }
   }
 
