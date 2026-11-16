@@ -5,6 +5,7 @@ import { PrivateKey } from './PrivateKey.js'
 import * as Aes from './aes.js'
 import { PublicKey } from './PublicKey.js'
 import { Deserializer } from './deserializer.js'
+import { cachedRPC } from './cachedRPC.js'
 
 export type Memo = {
   /**
@@ -21,6 +22,11 @@ export type Memo = {
    * Decrypts a memo message
    */
   decode(privateKey: string | PrivateKey, memo: string): string
+
+  /**
+   * Encrypts a memo for an account, looking up its memo key
+   */
+  encodeForAccount(privateKey: string | PrivateKey, account: string, memo: string): Promise<string>
 }
 
 /**
@@ -126,6 +132,16 @@ const toPublicObj = (o: string | PublicKey): PublicKey => {
   }
 }
 
+const encodeForAccount = async (
+  privateKey: string | PrivateKey,
+  account: string,
+  memo: string
+): Promise<string> => {
+  const [found] = await cachedRPC('condenser_api.get_accounts', [[account]])
+  if (!found) throw new Error(`Account not found: ${account}`)
+  return encode(privateKey, found.memo_key, memo)
+}
+
 /**
  * Memo utilities for encrypting and decrypting private messages between Hive users.
  * Uses AES encryption with ECDH key exchange for secure communication.
@@ -140,6 +156,9 @@ const toPublicObj = (o: string | PublicKey): PublicKey => {
  * // Encrypt a message
  * const encrypted = Memo.encode(senderPrivateKey, recipientPublicKey, '#Hello World')
  *
+ * // Or by account name; the recipient's memo key is fetched
+ * const encrypted = await Memo.encodeForAccount(senderPrivateKey, 'bob', '#Hello World')
+ *
  * // Decrypt a message
  * const decrypted = Memo.decode(recipientPrivateKey, encrypted)
  * console.log(decrypted) // '#Hello World'
@@ -147,5 +166,6 @@ const toPublicObj = (o: string | PublicKey): PublicKey => {
  */
 export const Memo = {
   decode,
-  encode
+  encode,
+  encodeForAccount
 }

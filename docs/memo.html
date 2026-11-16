@@ -71,6 +71,8 @@ const encrypted = Memo.encode(
   '#Hello'
 )</code></pre>
 <p>Put the encrypted string in a transfer <code>memo</code> field.</p>
+<p>To encrypt by account name, use <code>encodeForAccount</code>. It looks up the recipient's memo public key:</p>
+<pre><code class="language-javascript">const encrypted = await Memo.encodeForAccount(senderMemoKey, 'bob', '#Hello')</code></pre>
 <h2>Decrypt</h2>
 <pre><code class="language-javascript">const recipientMemoKey = PrivateKey.from('5J...recipient-memo-key')
 const text = Memo.decode(recipientMemoKey, encryptedMemo)

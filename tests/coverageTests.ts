@@ -233,6 +233,21 @@ export const coverageTests = async () => {
     }
   })
 
+  await runTest('Memo.encodeForAccount', async () => {
+    const sender = PrivateKey.randomKey()
+    const encoded = await Memo.encodeForAccount(sender, 'mahdiyari', '#hello')
+    const missing = await Memo.encodeForAccount(sender, 'no-such-acct-x1', '#x').catch(
+      (e) => e.message
+    )
+    // the sender can decrypt too, which proves it used the account's memo key pair
+    return (
+      encoded.startsWith('#') &&
+      encoded !== '#hello' &&
+      Memo.decode(sender, encoded) === '#hello' &&
+      missing === 'Account not found: no-such-acct-x1'
+    )
+  })
+
   // Utils tests
   console.log('Testing utils...')
 
@@ -309,7 +324,9 @@ export const coverageTests = async () => {
       utils.parseAsset('abc')
       return false
     } catch {
-      return str.amount === 1.5 && str.symbol === 'HIVE' && nai.amount === 1.5 && nai.symbol === 'HBD'
+      return (
+        str.amount === 1.5 && str.symbol === 'HIVE' && nai.amount === 1.5 && nai.symbol === 'HBD'
+      )
     }
   })
 
@@ -346,26 +363,39 @@ export const coverageTests = async () => {
   })
 
   await runTest('utils helpers fetch by name with one cached request', async () => {
+    // A fake node, so the request count does not depend on live nodes failing over
     const realFetch = globalThis.fetch
-    let requests = 0
-    globalThis.fetch = (...args) => {
-      requests++
-      return realFetch(...args)
+    const requests: string[] = []
+    globalThis.fetch = async (_input: string | URL | Request, init?: RequestInit) => {
+      const { id, method, params } = JSON.parse(String(init?.body))
+      requests.push(method)
+      const result =
+        method === 'rc_api.find_rc_accounts'
+          ? {
+              rc_accounts: [{ max_rc: 100, rc_manabar: { current_mana: 100, last_update_time: 0 } }]
+            }
+          : params[0][0] === 'cache-test-ok'
+            ? [stakeAccount]
+            : []
+      return Response.json({ jsonrpc: '2.0', id, result })
     }
     try {
       const [up, down] = await Promise.all([
-        utils.getVotingMana('hiveio'),
-        utils.getDownvoteMana('hiveio')
+        utils.getVotingMana('cache-test-ok'),
+        utils.getDownvoteMana('cache-test-ok')
       ])
-      const rc = await utils.getRCMana('hiveio')
-      // valid but unregistered name; names over 16 characters are rejected by the node instead
-      const missing = await utils.getVotingMana('no-such-acct-x1').catch((e) => e.message)
+      const again = await utils.getEffectiveVests('cache-test-ok')
+      const rc = await utils.getRCMana('cache-test-ok')
+      const missing = await utils.getVotingMana('cache-test-no').catch((e) => e.message)
       return (
-        requests === 3 &&
-        up.max > 0 &&
-        down.max === Math.floor(up.max * 0.25) &&
-        rc.max > 0 &&
-        missing === 'Account not found: no-such-acct-x1'
+        // one get_accounts shared by three helpers, one rc_api call, one lookup that finds nothing
+        requests.join() ===
+          'condenser_api.get_accounts,rc_api.find_rc_accounts,condenser_api.get_accounts' &&
+        up.max === chainMaxMana &&
+        down.max === Math.floor(chainMaxMana * 0.25) &&
+        Math.abs(again * 1e6 - chainMaxMana) < 1 &&
+        rc.max === 100 &&
+        missing === 'Account not found: cache-test-no'
       )
     } finally {
       globalThis.fetch = realFetch
@@ -419,6 +449,80 @@ export const coverageTests = async () => {
       /^hello-world-cafe-[0-9a-f]{12}$/.test(permlink) &&
       /^[0-9a-f]{12}$/.test(reply) &&
       reply !== utils.createPermlink()
+    )
+  })
+
+  await runTest('utils mana fullAt', async () => {
+    const now = 1794864276 * 1000
+    const up = await utils.getVotingMana(stakeAccount, now)
+    const secondsToFull = ((chainMaxMana - 153710560566990) * 432000) / chainMaxMana
+    const full = await utils.getDownvoteMana(stakeAccount, now)
+    return (
+      Math.abs(up.fullAt.getTime() - (now + secondsToFull * 1000)) < 1 &&
+      full.fullAt.getTime() === now
+    )
+  })
+
+  await runTest('utils price, APR, and account value', async () => {
+    const hbd = await utils.hiveToHbd(1)
+    const hpApr = await utils.getHpApr()
+    const hbdApr = await utils.getHbdApr()
+    return (
+      hbd > 0 &&
+      Math.abs((await utils.hbdToHive(hbd)) - 1) < 1e-12 &&
+      (await utils.hiveToHbd('2.000 HIVE')) === 2 * hbd &&
+      // loose sanity bounds; HP APR is about 3% at the time of writing
+      hpApr > 0 &&
+      hpApr < 10 &&
+      hbdApr >= 0 &&
+      hbdApr <= 100 &&
+      (await utils.estimateAccountValue('mahdiyari')) > 0
+    )
+  })
+
+  await runTest('utils social operations', () => {
+    const json = (op: [string, { id: string; json: string }]) => `${op[1].id} ${op[1].json}`
+    return (
+      json(utils.follow('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":["blog"]}]' &&
+      json(utils.unfollow('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":[]}]' &&
+      json(utils.mute('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":["ignore"]}]' &&
+      json(utils.blacklist('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":["blacklist"]}]' &&
+      json(utils.unblacklist('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":["unblacklist"]}]' &&
+      json(utils.followBlacklist('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":["follow_blacklist"]}]' &&
+      json(utils.unfollowMuted('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":["unfollow_muted"]}]' &&
+      json(utils.reblog('a', 'b', 'p')) ===
+        'follow ["reblog",{"account":"a","author":"b","permlink":"p"}]' &&
+      json(utils.subscribe('a', 'hive-1')) === 'community ["subscribe",{"community":"hive-1"}]' &&
+      json(utils.unsubscribe('a', 'hive-1')) ===
+        'community ["unsubscribe",{"community":"hive-1"}]' &&
+      utils.follow('a', 'b')[1].required_posting_auths[0] === 'a'
+    )
+  })
+
+  await runTest('utils key helpers', () => {
+    const keys = utils.generateKeys('alice', 'P5Kexample')
+    const posting = PrivateKey.fromLogin('alice', 'P5Kexample', 'posting')
+    const password = utils.createPassword()
+    const pub = keys.publicKeys.owner
+    const corrupted = pub.slice(0, -1) + (pub.endsWith('x') ? 'y' : 'x')
+    return (
+      keys.privateKeys.posting === posting.toString() &&
+      keys.publicKeys.posting === posting.createPublic().toString() &&
+      keys.owner.key_auths[0][0] === pub &&
+      keys.memo_key === keys.publicKeys.memo &&
+      password.startsWith('P5') &&
+      utils.isValidWif(password.slice(1)) &&
+      !utils.isValidWif('5Jbad') &&
+      utils.isValidPublicKey(pub) &&
+      !utils.isValidPublicKey(corrupted) &&
+      !utils.isValidPublicKey('junk')
     )
   })
 

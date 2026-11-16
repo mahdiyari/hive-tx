@@ -34,6 +34,15 @@ export interface RCAccount {
   rc_manabar: ManabarInput
 }
 
+/** Account fields used for its value, from `get_accounts` */
+export interface WalletAccount extends StakeAccount {
+  name: string
+  balance: AssetInput
+  savings_balance: AssetInput
+  hbd_balance: AssetInput
+  savings_hbd_balance: AssetInput
+}
+
 /** Account name, or an account object from `get_accounts` / `find_accounts` */
 export type AccountInput = string | StakeAccount
 
@@ -46,11 +55,13 @@ export interface Manabar {
   max: number
   /** 0 to 100 */
   percentage: number
+  /** When the mana will be full; already passed if it is full */
+  fullAt: Date
 }
 
-const fetchAccount = async (account: AccountInput): Promise<StakeAccount> => {
+const fetchAccount = async <T extends StakeAccount>(account: string | T): Promise<T> => {
   if (typeof account !== 'string') return account
-  const [found] = await cachedRPC<StakeAccount[]>('condenser_api.get_accounts', [[account]])
+  const [found] = await cachedRPC<T[]>('condenser_api.get_accounts', [[account]])
   if (!found) throw new Error(`Account not found: ${account}`)
   return found
 }
@@ -62,6 +73,7 @@ const fetchRCAccount = async (account: RCAccountInput): Promise<RCAccount> => {
   return rc_accounts[0]
 }
 
+// shortcut: chain constants hardcoded as of HF28; update them if a hardfork changes them
 /** Mana regenerates from 0 to full in 5 days */
 const MANA_REGEN_SECONDS = 432_000
 /** dgp.downvote_pool_percent: downvote mana is 25% of voting mana since HF21 */
@@ -91,6 +103,22 @@ export const parseAsset = (asset: AssetInput): { amount: number; symbol: string 
 
 const amountOf = (value: number | AssetInput) =>
   typeof value === 'number' ? value : parseAsset(value).amount
+
+// shortcut: the median feed is a 3.5-day median of witness feeds, not the live market price;
+// use a market price where it matters (trading, exact valuations)
+/** HBD per HIVE from the witnesses' median price feed */
+const medianPrice = async (): Promise<number> => {
+  const price = await cachedRPC('condenser_api.get_current_median_history_price')
+  return amountOf(price.base) / amountOf(price.quote)
+}
+
+/** Converts HIVE to HBD at the median price feed */
+export const hiveToHbd = async (hive: number | AssetInput): Promise<number> =>
+  amountOf(hive) * (await medianPrice())
+
+/** Converts HBD to HIVE at the median price feed */
+export const hbdToHive = async (hbd: number | AssetInput): Promise<number> =>
+  amountOf(hbd) / (await medianPrice())
 
 /** Converts VESTS to HIVE Power at the current rate */
 export const vestsToHP = async (vests: number | AssetInput): Promise<number> => {
@@ -127,13 +155,20 @@ const effectiveVests = (account: StakeAccount): number => {
 export const getEffectiveVests = async (account: AccountInput): Promise<number> =>
   effectiveVests(await fetchAccount(account))
 
+// shortcut: `now` defaults to the local clock, so a skewed clock skews mana; pass chain time if it matters
 const regenerate = (bar: ManabarInput, max: number, now: number): Manabar => {
   const elapsed = Math.max(0, now / 1000 - bar.last_update_time)
   const current = Math.min(
     max,
     Number(bar.current_mana) + Math.floor((max * elapsed) / MANA_REGEN_SECONDS)
   )
-  return { current, max, percentage: max > 0 ? (current / max) * 100 : 0 }
+  const secondsToFull = max > 0 ? ((max - current) * MANA_REGEN_SECONDS) / max : 0
+  return {
+    current,
+    max,
+    percentage: max > 0 ? (current / max) * 100 : 0,
+    fullAt: new Date(now + secondsToFull * 1000)
+  }
 }
 
 /** Mana is counted in micro-VESTS */
@@ -178,17 +213,59 @@ export const getVoteRShares = async (account: AccountInput, weight = 10000): Pro
 export const rsharesToHBD = async (rshares: number): Promise<number> => {
   const [fund, price] = await Promise.all([
     cachedRPC('condenser_api.get_reward_fund', ['post']),
-    cachedRPC('condenser_api.get_current_median_history_price')
+    medianPrice()
   ])
-  return (
-    ((rshares * amountOf(fund.reward_balance)) / Number(fund.recent_claims)) *
-    (amountOf(price.base) / amountOf(price.quote))
-  )
+  return ((rshares * amountOf(fund.reward_balance)) / Number(fund.recent_claims)) * price
 }
 
 /** Estimated HBD value of a vote, author and curation rewards combined */
 export const getVoteValue = async (account: AccountInput, weight = 10000): Promise<number> =>
   rsharesToHBD(await getVoteRShares(account, weight))
+
+/** Yearly HIVE Power interest in percent, from the chain's current inflation */
+export const getHpApr = async (): Promise<number> => {
+  const [props, [treasury], price] = await Promise.all([
+    cachedRPC('condenser_api.get_dynamic_global_properties'),
+    cachedRPC('condenser_api.get_accounts', [['hive.fund']]),
+    medianPrice()
+  ])
+  // shortcut: treasury account name and inflation schedule hardcoded as of HF28; update on hardfork
+  // Inflation started at 9.78% and drops 0.01% every 250k blocks, down to 0.95%
+  const inflation = Math.max(978 - Math.floor(props.head_block_number / 250_000), 95) / 10000
+  // Since HF28 the treasury's HBD does not count toward the inflation base
+  const hbdOutsideTreasury = amountOf(props.current_hbd_supply) - amountOf(treasury.hbd_balance)
+  const supply = amountOf(props.current_supply) + hbdOutsideTreasury / price
+  const yearlyVestingReward = (supply * inflation * props.vesting_reward_percent) / 10000
+  return (yearlyVestingReward / amountOf(props.total_vesting_fund_hive)) * 100
+}
+
+/** Yearly interest on HBD in savings, in percent, as set by witnesses */
+export const getHbdApr = async (): Promise<number> =>
+  (await cachedRPC('condenser_api.get_dynamic_global_properties')).hbd_interest_rate / 100
+
+/**
+ * Estimated account value in HBD at the median price: liquid, savings, HIVE Power
+ * (own, including delegated out), and funds in open market orders.
+ */
+export const estimateAccountValue = async (account: string | WalletAccount): Promise<number> => {
+  const acc = await fetchAccount(account)
+  const [orders, hp, price] = await Promise.all([
+    cachedRPC<{ for_sale: number; sell_price: { base: AssetInput } }[]>(
+      'condenser_api.get_open_orders',
+      [acc.name]
+    ),
+    vestsToHP(acc.vesting_shares),
+    medianPrice()
+  ])
+  let hive = amountOf(acc.balance) + amountOf(acc.savings_balance) + hp
+  let hbd = amountOf(acc.hbd_balance) + amountOf(acc.savings_hbd_balance)
+  for (const order of orders) {
+    // for_sale is in thousandths of the asset being sold
+    if (parseAsset(order.sell_price.base).symbol === 'HIVE') hive += order.for_sale / 1000
+    else hbd += order.for_sale / 1000
+  }
+  return hbd + hive * price
+}
 
 /** Converts raw reputation (e.g. `"79470587263453"`) to the familiar score (e.g. `66.2`) */
 export const formatReputation = (raw: number | string): number => {

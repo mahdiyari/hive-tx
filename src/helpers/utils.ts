@@ -4,6 +4,8 @@ import { PublicKey } from './PublicKey.js'
 import { bytesToHex, randomBytes } from '@noble/hashes/utils.js'
 
 export * from './chainMath.js'
+export * from './keys.js'
+export * from './social.js'
 
 export interface WitnessProps {
   account_creation_fee?: string
