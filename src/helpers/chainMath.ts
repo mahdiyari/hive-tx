@@ -1,6 +1,9 @@
+import { cachedRPC } from './cachedRPC.js'
+
 /**
- * Stake, mana, vote, and reputation math. Inputs accept both API formats:
- * condenser_api (`"1.000 HIVE"`) and database_api/HAF (`{ amount, precision, nai }`).
+ * Stake, mana, vote, and reputation math. Account helpers take a name, or an account object
+ * you already have (condenser_api or database_api format) to skip the request.
+ * Chain data is fetched internally and cached for 2 seconds.
  * Results are JavaScript numbers: exact enough for display and estimates, not for consensus.
  */
 
@@ -31,23 +34,11 @@ export interface RCAccount {
   rc_manabar: ManabarInput
 }
 
-/** Fields from `get_dynamic_global_properties` */
-export interface VestingProps {
-  total_vesting_fund_hive: AssetInput
-  total_vesting_shares: AssetInput
-}
+/** Account name, or an account object from `get_accounts` / `find_accounts` */
+export type AccountInput = string | StakeAccount
 
-/** Fields from `get_reward_fund('post')` */
-export interface RewardFund {
-  reward_balance: AssetInput
-  recent_claims: number | string
-}
-
-/** HBD per HIVE, e.g. from `get_current_median_history_price` */
-export interface Price {
-  base: AssetInput
-  quote: AssetInput
-}
+/** Account name, or an object from `rc_api.find_rc_accounts` */
+export type RCAccountInput = string | RCAccount
 
 export interface Manabar {
   /** Current mana, regenerated to now */
@@ -55,6 +46,20 @@ export interface Manabar {
   max: number
   /** 0 to 100 */
   percentage: number
+}
+
+const fetchAccount = async (account: AccountInput): Promise<StakeAccount> => {
+  if (typeof account !== 'string') return account
+  const [found] = await cachedRPC<StakeAccount[]>('condenser_api.get_accounts', [[account]])
+  if (!found) throw new Error(`Account not found: ${account}`)
+  return found
+}
+
+const fetchRCAccount = async (account: RCAccountInput): Promise<RCAccount> => {
+  if (typeof account !== 'string') return account
+  const { rc_accounts } = await cachedRPC('rc_api.find_rc_accounts', { accounts: [account] })
+  if (!rc_accounts[0]) throw new Error(`Account not found: ${account}`)
+  return rc_accounts[0]
 }
 
 /** Mana regenerates from 0 to full in 5 days */
@@ -87,19 +92,24 @@ export const parseAsset = (asset: AssetInput): { amount: number; symbol: string 
 const amountOf = (value: number | AssetInput) =>
   typeof value === 'number' ? value : parseAsset(value).amount
 
-/** Converts VESTS to HIVE Power */
-export const vestsToHP = (vests: number | AssetInput, props: VestingProps): number =>
-  (amountOf(vests) * amountOf(props.total_vesting_fund_hive)) / amountOf(props.total_vesting_shares)
+/** Converts VESTS to HIVE Power at the current rate */
+export const vestsToHP = async (vests: number | AssetInput): Promise<number> => {
+  const props = await cachedRPC('condenser_api.get_dynamic_global_properties')
+  return (
+    (amountOf(vests) * amountOf(props.total_vesting_fund_hive)) /
+    amountOf(props.total_vesting_shares)
+  )
+}
 
-/** Converts HIVE Power to VESTS */
-export const hpToVests = (hp: number | AssetInput, props: VestingProps): number =>
-  (amountOf(hp) * amountOf(props.total_vesting_shares)) / amountOf(props.total_vesting_fund_hive)
+/** Converts HIVE Power to VESTS at the current rate */
+export const hpToVests = async (hp: number | AssetInput): Promise<number> => {
+  const props = await cachedRPC('condenser_api.get_dynamic_global_properties')
+  return (
+    (amountOf(hp) * amountOf(props.total_vesting_shares)) / amountOf(props.total_vesting_fund_hive)
+  )
+}
 
-/**
- * VESTS that give voting power: own + received - delegated - this week's power down.
- * This is also the maximum voting mana, in VESTS.
- */
-export const getEffectiveVests = (account: StakeAccount): number => {
+const effectiveVests = (account: StakeAccount): number => {
   // to_withdraw and withdrawn are in micro-VESTS
   const remainingPowerDown = (Number(account.to_withdraw) - Number(account.withdrawn)) / 1e6
   return (
@@ -109,6 +119,13 @@ export const getEffectiveVests = (account: StakeAccount): number => {
     Math.min(amountOf(account.vesting_withdraw_rate), remainingPowerDown)
   )
 }
+
+/**
+ * VESTS that give voting power: own + received - delegated - this week's power down.
+ * This is also the maximum voting mana, in VESTS.
+ */
+export const getEffectiveVests = async (account: AccountInput): Promise<number> =>
+  effectiveVests(await fetchAccount(account))
 
 const regenerate = (bar: ManabarInput, max: number, now: number): Manabar => {
   const elapsed = Math.max(0, now / 1000 - bar.last_update_time)
@@ -120,46 +137,58 @@ const regenerate = (bar: ManabarInput, max: number, now: number): Manabar => {
 }
 
 /** Mana is counted in micro-VESTS */
-const maxVotingMana = (account: StakeAccount) => Math.round(getEffectiveVests(account) * 1e6)
+const maxVotingMana = (account: StakeAccount) => Math.round(effectiveVests(account) * 1e6)
 
 /** Upvote mana ("voting power") of an account at `now` (ms) */
-export const getVotingMana = (account: StakeAccount, now = Date.now()): Manabar =>
-  regenerate(account.voting_manabar, maxVotingMana(account), now)
+export const getVotingMana = async (account: AccountInput, now = Date.now()): Promise<Manabar> => {
+  const acc = await fetchAccount(account)
+  return regenerate(acc.voting_manabar, maxVotingMana(acc), now)
+}
 
 /** Downvote mana of an account at `now` (ms) */
-export const getDownvoteMana = (account: StakeAccount, now = Date.now()): Manabar =>
-  regenerate(account.downvote_manabar, Math.floor(maxVotingMana(account) * DOWNVOTE_POOL), now)
+export const getDownvoteMana = async (
+  account: AccountInput,
+  now = Date.now()
+): Promise<Manabar> => {
+  const acc = await fetchAccount(account)
+  return regenerate(acc.downvote_manabar, Math.floor(maxVotingMana(acc) * DOWNVOTE_POOL), now)
+}
 
-/** Resource credits of an account from `rc_api.find_rc_accounts`, at `now` (ms) */
-export const getRCMana = (rcAccount: RCAccount, now = Date.now()): Manabar =>
-  regenerate(rcAccount.rc_manabar, Number(rcAccount.max_rc), now)
+/** Resource credits of an account at `now` (ms) */
+export const getRCMana = async (account: RCAccountInput, now = Date.now()): Promise<Manabar> => {
+  const acc = await fetchRCAccount(account)
+  return regenerate(acc.rc_manabar, Number(acc.max_rc), now)
+}
 
 /**
  * rshares a vote adds to a post. `weight` is -10000 to 10000 (-100% to 100%).
  * Since HF28 vote strength depends only on stake and weight, not on current mana;
  * mana only limits how many votes an account can cast.
  */
-export const getVoteRShares = (account: StakeAccount, weight = 10000): number => {
+export const getVoteRShares = async (account: AccountInput, weight = 10000): Promise<number> => {
   const usedMana = Math.ceil(
-    (maxVotingMana(account) * Math.abs(weight) * 86400) /
+    (maxVotingMana(await fetchAccount(account)) * Math.abs(weight) * 86400) /
       10000 /
       (VOTE_POWER_RESERVE_RATE * MANA_REGEN_SECONDS)
   )
   return Math.sign(weight) * Math.max(0, usedMana - VOTE_DUST_THRESHOLD)
 }
 
-/** HBD value of rshares at the current reward pool and price (linear reward curve) */
-export const rsharesToHBD = (rshares: number, fund: RewardFund, price: Price): number =>
-  ((rshares * amountOf(fund.reward_balance)) / Number(fund.recent_claims)) *
-  (amountOf(price.base) / amountOf(price.quote))
+/** HBD value of rshares at the current reward pool and median price (linear reward curve) */
+export const rsharesToHBD = async (rshares: number): Promise<number> => {
+  const [fund, price] = await Promise.all([
+    cachedRPC('condenser_api.get_reward_fund', ['post']),
+    cachedRPC('condenser_api.get_current_median_history_price')
+  ])
+  return (
+    ((rshares * amountOf(fund.reward_balance)) / Number(fund.recent_claims)) *
+    (amountOf(price.base) / amountOf(price.quote))
+  )
+}
 
 /** Estimated HBD value of a vote, author and curation rewards combined */
-export const getVoteValue = (
-  account: StakeAccount,
-  fund: RewardFund,
-  price: Price,
-  weight = 10000
-): number => rsharesToHBD(getVoteRShares(account, weight), fund, price)
+export const getVoteValue = async (account: AccountInput, weight = 10000): Promise<number> =>
+  rsharesToHBD(await getVoteRShares(account, weight))
 
 /** Converts raw reputation (e.g. `"79470587263453"`) to the familiar score (e.g. `66.2`) */
 export const formatReputation = (raw: number | string): number => {

@@ -14,7 +14,7 @@ import { config } from './config.js'
 import { callRPC, RPCError } from './helpers/call.js'
 import { DigestData } from './types.js'
 import { sleep } from './helpers/sleep.js'
-import { getDynamicGlobalProperties } from './helpers/getDynamicProps.js'
+import { cachedRPC } from './helpers/cachedRPC.js'
 
 interface TransactionOptions {
   transaction?: TransactionType | Transaction
@@ -210,7 +210,7 @@ export class Transaction {
    * @param expiration Transaction expiration in milliseconds
    */
   private createTransaction = async (expiration: number) => {
-    const props = await getDynamicGlobalProperties()
+    const props = await cachedRPC('condenser_api.get_dynamic_global_properties')
     const bytes = hexToBytes(props.head_block_id)
     const refBlockPrefix = Number(new Uint32Array(bytes.buffer, bytes.byteOffset + 4, 1)[0])
     const expirationIso = new Date(Date.now() + expiration).toISOString().slice(0, -5)

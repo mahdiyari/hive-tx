@@ -768,32 +768,26 @@ PAGES["utils"] = (
     "Use",
     "The utils object has stake and mana math, vote values, reputation, permlinks, name validation, history filters, and witness properties.",
     """
-<p>The math helpers accept account and property objects from either API format: <code>condenser_api</code> (<code>"1.000 HIVE"</code>) or <code>database_api</code> (<code>{ amount, precision, nai }</code>). Results are JavaScript numbers, accurate for display and estimates.</p>
+<p>The stake, mana, and vote helpers are async and fetch what they need: account, global properties, reward fund, and price. Fetched data is cached for 2 seconds and shared by concurrent calls, so calling several helpers in a row costs one request per kind of data. Results are JavaScript numbers, accurate for display and estimates.</p>
 <h2>Voting power and mana</h2>
-<pre><code>import { callRPC, utils } from 'hive-tx'
+<pre><code>import { utils } from 'hive-tx'
 
-const [account] = await callRPC('condenser_api.get_accounts', [['alice']])
-const { rc_accounts } = await callRPC('rc_api.find_rc_accounts', { accounts: ['alice'] })
-
-utils.getVotingMana(account)      // { current, max, percentage }
-utils.getDownvoteMana(account)
-utils.getRCMana(rc_accounts[0])
-utils.getEffectiveVests(account)  // own + received - delegated - this week's power down</code></pre>
+await utils.getVotingMana('alice')      // { current, max, percentage }
+await utils.getDownvoteMana('alice')
+await utils.getRCMana('alice')
+await utils.getEffectiveVests('alice')  // own + received - delegated - this week's power down</code></pre>
+<p>Instead of a name, you can pass an account object you already have, from <code>condenser_api.get_accounts</code> or <code>database_api.find_accounts</code> (for <code>getRCMana</code>, from <code>rc_api.find_rc_accounts</code>). That skips the request.</p>
 <p>Mana is regenerated to now; pass a time in milliseconds as the last argument to compute it at another time. Mana refills from 0 to 100% in 5 days. Downvote mana is 25% of voting mana.</p>
 <h2>Hive Power</h2>
-<pre><code>const props = await callRPC('condenser_api.get_dynamic_global_properties')
-
-utils.vestsToHP(account.vesting_shares, props)  // number of HIVE
-utils.hpToVests(100, props)                     // number of VESTS
-utils.parseAsset('1.000 HIVE')                  // { amount: 1, symbol: 'HIVE' }</code></pre>
+<pre><code>await utils.vestsToHP('1000.000000 VESTS')  // number of HIVE
+await utils.hpToVests(100)                  // number of VESTS
+utils.parseAsset('1.000 HIVE')              // { amount: 1, symbol: 'HIVE' }</code></pre>
+<p><code>parseAsset</code> also reads the <code>{ amount, precision, nai }</code> format of <code>database_api</code>.</p>
 <h2>Vote value</h2>
-<pre><code>const fund = await callRPC('condenser_api.get_reward_fund', ['post'])
-const price = await callRPC('condenser_api.get_current_median_history_price')
-
-utils.getVoteValue(account, fund, price)         // HBD, 100% vote
-utils.getVoteValue(account, fund, price, 5000)   // 50% vote
-utils.getVoteRShares(account, 10000)             // rshares
-utils.rsharesToHBD(rshares, fund, price)         // HBD of any rshares</code></pre>
+<pre><code>await utils.getVoteValue('alice')         // HBD, 100% vote
+await utils.getVoteValue('alice', 5000)   // 50% vote
+await utils.getVoteRShares('alice')       // rshares
+await utils.rsharesToHBD(rshares)         // HBD of any rshares</code></pre>
 <p>Weight is -10000 to 10000. Since HF28, vote strength depends on stake and weight only. Current mana limits how many votes an account can cast, not how strong each vote is. The value combines author and curation rewards.</p>
 <h2>Reputation</h2>
 <pre><code>utils.formatReputation('225722985673795')  // 73.18</code></pre>
