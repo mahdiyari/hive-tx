@@ -7,7 +7,7 @@
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green.svg)](https://nodejs.org/)
 [![Bundlejs](https://deno.bundlejs.com/badge?q=hive-tx@latest)](https://bundlejs.com/?q=hive-tx@latest)
 
-Lightweight TypeScript SDK for the Hive blockchain. No runtime dependencies, ~32 KB minified and gzipped. Works in Node.js, browsers, workers, and serverless runtimes.
+Lightweight TypeScript SDK for the Hive blockchain. No runtime dependencies, ~33 KB minified and gzipped. Works in Node.js, browsers, workers, and serverless runtimes.
 
 - Build, sign, and broadcast transactions, typed per operation
 - JSON-RPC with automatic node failover, batch requests, and quorum calls that cross-check nodes
