@@ -596,6 +596,8 @@ const encrypted = Memo.encode(
   '#Hello'
 )</code></pre>
 <p>Put the encrypted string in a transfer <code>memo</code> field.</p>
+<p>To encrypt by account name, use <code>encodeForAccount</code>. It looks up the recipient's memo public key:</p>
+<pre><code>const encrypted = await Memo.encodeForAccount(senderMemoKey, 'bob', '#Hello')</code></pre>
 <h2>Decrypt</h2>
 <pre><code>const recipientMemoKey = PrivateKey.from('5J...recipient-memo-key')
 const text = Memo.decode(recipientMemoKey, encryptedMemo)
@@ -777,12 +779,20 @@ await utils.getDownvoteMana('alice')
 await utils.getRCMana('alice')
 await utils.getEffectiveVests('alice')  // own + received - delegated - this week's power down</code></pre>
 <p>Instead of a name, you can pass an account object you already have, from <code>condenser_api.get_accounts</code> or <code>database_api.find_accounts</code> (for <code>getRCMana</code>, from <code>rc_api.find_rc_accounts</code>). That skips the request.</p>
-<p>Mana is regenerated to now; pass a time in milliseconds as the last argument to compute it at another time. Mana refills from 0 to 100% in 5 days. Downvote mana is 25% of voting mana.</p>
+<p>Mana is regenerated to now; pass a time in milliseconds as the last argument to compute it at another time. Mana refills from 0 to 100% in 5 days. Downvote mana is 25% of voting mana. <code>fullAt</code> is a <code>Date</code> for when the mana will be full.</p>
 <h2>Hive Power</h2>
 <pre><code>await utils.vestsToHP('1000.000000 VESTS')  // number of HIVE
 await utils.hpToVests(100)                  // number of VESTS
 utils.parseAsset('1.000 HIVE')              // { amount: 1, symbol: 'HIVE' }</code></pre>
 <p><code>parseAsset</code> also reads the <code>{ amount, precision, nai }</code> format of <code>database_api</code>.</p>
+<h2>Prices and interest</h2>
+<pre><code>await utils.hiveToHbd(10)          // HBD, at the witnesses' median price
+await utils.hbdToHive('10.000 HBD')
+await utils.getHpApr()             // yearly HIVE Power interest, percent
+await utils.getHbdApr()            // yearly interest on HBD in savings, percent</code></pre>
+<h2>Account value</h2>
+<pre><code>await utils.estimateAccountValue('alice')  // HBD</code></pre>
+<p>Counts liquid and savings HIVE and HBD, own HIVE Power (including delegated out), and funds in open market orders, at the median price.</p>
 <h2>Vote value</h2>
 <pre><code>await utils.getVoteValue('alice')         // HBD, 100% vote
 await utils.getVoteValue('alice', 5000)   // 50% vote
@@ -796,6 +806,34 @@ await utils.rsharesToHBD(rshares)         // HBD of any rshares</code></pre>
 <pre><code>utils.createPermlink('Hello World!')  // 'hello-world-3f9a1c0b7e2d'
 utils.createPermlink()                // '3f9a1c0b7e2d', for replies</code></pre>
 <p>Makes a valid permlink from a title, with a random suffix so titles can repeat.</p>
+<h2>Social operations</h2>
+<p>These build the <code>custom_json</code> operations that Hivemind reads. Sign them with the posting key.</p>
+<pre><code>const tx = new Transaction()
+await tx.addOperation(...utils.follow('alice', 'bob'))
+// also: unfollow, mute, unmute (follower, following)
+//       blacklist, unblacklist: block an account (posts marked "my blacklist")
+//       followBlacklist, unfollowBlacklist, followMuted, unfollowMuted: use another account's lists
+//       reblog(account, author, permlink)
+//       subscribe, unsubscribe(account, 'hive-123456')</code></pre>
+<p>Unfollow clears a follow or a mute; removing a blacklist entry needs <code>unblacklist</code>.</p>
+<h2>Account keys</h2>
+<pre><code>const password = utils.createPassword()  // 'P5...', show it to the user once
+const { privateKeys, owner, active, posting, memo_key } = utils.generateKeys('newuser', password)
+
+await tx.addOperation('create_claimed_account', {
+  creator: 'alice',
+  new_account_name: 'newuser',
+  owner,
+  active,
+  posting,
+  memo_key,
+  json_metadata: '',
+  extensions: []
+})
+
+utils.isValidWif('5J...')         // true or false
+utils.isValidPublicKey('STM...')  // checks prefix, checksum, and curve point</code></pre>
+<p><code>generateKeys</code> derives keys the same way Hive wallets do, so the user can log in with the password. <code>privateKeys</code> has the owner, active, posting, and memo keys.</p>
 <h2>validateUsername</h2>
 <p>The function returns <code>null</code> if the name is valid. The function returns an error string if the name is not valid.</p>
 <pre><code>import { utils } from 'hive-tx'
@@ -973,6 +1011,7 @@ PAGES["reference"] = (
 <h2>Memo</h2>
 <p><code>Memo.encode(privateKey, publicKey, memo): string</code></p>
 <p><code>Memo.decode(privateKey, memo): string</code></p>
+<p><code>Memo.encodeForAccount(privateKey, account, memo): Promise&lt;string&gt;</code></p>
 <h2>Operation names</h2>
 <p>TypeScript accepts Hive operation names as the first argument of <code>addOperation</code>. The body type matches the name. Common names:</p>
 <ul>

@@ -233,6 +233,19 @@ export const coverageTests = async () => {
     }
   })
 
+  await runTest('Memo.encodeForAccount', async () => {
+    const sender = PrivateKey.randomKey()
+    const encoded = await Memo.encodeForAccount(sender, 'mahdiyari', '#hello')
+    const missing = await Memo.encodeForAccount(sender, 'no-such-acct-x1', '#x').catch((e) => e.message)
+    // the sender can decrypt too, which proves it used the account's memo key pair
+    return (
+      encoded.startsWith('#') &&
+      encoded !== '#hello' &&
+      Memo.decode(sender, encoded) === '#hello' &&
+      missing === 'Account not found: no-such-acct-x1'
+    )
+  })
+
   // Utils tests
   console.log('Testing utils...')
 
@@ -419,6 +432,79 @@ export const coverageTests = async () => {
       /^hello-world-cafe-[0-9a-f]{12}$/.test(permlink) &&
       /^[0-9a-f]{12}$/.test(reply) &&
       reply !== utils.createPermlink()
+    )
+  })
+
+  await runTest('utils mana fullAt', async () => {
+    const now = 1794864276 * 1000
+    const up = await utils.getVotingMana(stakeAccount, now)
+    const secondsToFull = ((chainMaxMana - 153710560566990) * 432000) / chainMaxMana
+    const full = await utils.getDownvoteMana(stakeAccount, now)
+    return (
+      Math.abs(up.fullAt.getTime() - (now + secondsToFull * 1000)) < 1 &&
+      full.fullAt.getTime() === now
+    )
+  })
+
+  await runTest('utils price, APR, and account value', async () => {
+    const hbd = await utils.hiveToHbd(1)
+    const hpApr = await utils.getHpApr()
+    const hbdApr = await utils.getHbdApr()
+    return (
+      hbd > 0 &&
+      Math.abs((await utils.hbdToHive(hbd)) - 1) < 1e-12 &&
+      (await utils.hiveToHbd('2.000 HIVE')) === 2 * hbd &&
+      // loose sanity bounds; HP APR is about 3% at the time of writing
+      hpApr > 0 &&
+      hpApr < 10 &&
+      hbdApr >= 0 &&
+      hbdApr <= 100 &&
+      (await utils.estimateAccountValue('mahdiyari')) > 0
+    )
+  })
+
+  await runTest('utils social operations', () => {
+    const json = (op: [string, { id: string; json: string }]) => `${op[1].id} ${op[1].json}`
+    return (
+      json(utils.follow('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":["blog"]}]' &&
+      json(utils.unfollow('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":[]}]' &&
+      json(utils.mute('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":["ignore"]}]' &&
+      json(utils.blacklist('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":["blacklist"]}]' &&
+      json(utils.unblacklist('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":["unblacklist"]}]' &&
+      json(utils.followBlacklist('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":["follow_blacklist"]}]' &&
+      json(utils.unfollowMuted('a', 'b')) ===
+        'follow ["follow",{"follower":"a","following":"b","what":["unfollow_muted"]}]' &&
+      json(utils.reblog('a', 'b', 'p')) ===
+        'follow ["reblog",{"account":"a","author":"b","permlink":"p"}]' &&
+      json(utils.subscribe('a', 'hive-1')) === 'community ["subscribe",{"community":"hive-1"}]' &&
+      json(utils.unsubscribe('a', 'hive-1')) === 'community ["unsubscribe",{"community":"hive-1"}]' &&
+      utils.follow('a', 'b')[1].required_posting_auths[0] === 'a'
+    )
+  })
+
+  await runTest('utils key helpers', () => {
+    const keys = utils.generateKeys('alice', 'P5Kexample')
+    const posting = PrivateKey.fromLogin('alice', 'P5Kexample', 'posting')
+    const password = utils.createPassword()
+    const pub = keys.publicKeys.owner
+    const corrupted = pub.slice(0, -1) + (pub.endsWith('x') ? 'y' : 'x')
+    return (
+      keys.privateKeys.posting === posting.toString() &&
+      keys.publicKeys.posting === posting.createPublic().toString() &&
+      keys.owner.key_auths[0][0] === pub &&
+      keys.memo_key === keys.publicKeys.memo &&
+      password.startsWith('P5') &&
+      utils.isValidWif(password.slice(1)) &&
+      !utils.isValidWif('5Jbad') &&
+      utils.isValidPublicKey(pub) &&
+      !utils.isValidPublicKey(corrupted) &&
+      !utils.isValidPublicKey('junk')
     )
   })
 
