@@ -40,7 +40,7 @@ jobs:
         timeout-minutes: 5
         continue-on-error: false
         env:
-          # Tests make live API calls to Hive nodes and external PostgreSQL
+          # Tests make live API calls to Hive nodes
           NODE_ENV: test
 
   lint:

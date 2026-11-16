@@ -1,7 +1,6 @@
 import { bytesToHex } from '@noble/hashes/utils.js'
-import { Transaction, utils } from 'hive-tx'
+import { Transaction, callREST, utils } from 'hive-tx'
 import { getTransactionHex } from './getTransactionHex.js'
-import { Client } from 'pg'
 
 // Test public key
 const testKey = 'STM8AGkwKrzgrAHcdGr2yyfyQHyjziJgjw2Yuy3352HBkUjQDRrAG'
@@ -391,11 +390,10 @@ export const operationTests = async () => {
 
   console.log(`Testing ${opTypes.length} operations...\n`)
 
-  const allOperationTypes = await getAllOperationsFromHafsql()
-  const testedOps: Record<string, boolean> = {}
-  allOperationTypes.forEach((value) => {
-    testedOps[value.name] = false
-  })
+  // The API schema marks every field optional
+  const allOperationTypes = (await callREST('hafah', '/operation-types')).flatMap((type) =>
+    type.is_virtual || !type.operation_name ? [] : [type.operation_name.replace(/_operation$/, '')]
+  )
 
   let passedCount = 0
 
@@ -408,39 +406,17 @@ export const operationTests = async () => {
     }
     // Rate limiting sleep
     await sleep(100)
-    // Mark tested
-    const opName = `hive::protocol::${opType}_operation`
-    testedOps[opName] = true
   }
   console.log('\nAll operation tests completed!')
   console.log(`✅ Passed tests:${passedCount}`)
   console.log(`❌ Failed tests:${opTypes.length - passedCount}`)
 
-  for (const key in testedOps) {
-    if (!testedOps[key]) {
-      const opType = key.replace(/^.*::(.*)_operation$/, '$1')
-      if (!skipOperations.includes(opType)) {
-        console.log(`  ❌ Not implemented: ${opType}`)
-      }
+  for (const opType of allOperationTypes) {
+    if (!opTypes.includes(opType) && !skipOperations.includes(opType)) {
+      console.log(`  ❌ Not implemented: ${opType}`)
     }
   }
   if (passedCount !== opTypes.length) {
     throw new Error(`${opTypes.length - passedCount} operation test(s) failed`)
   }
-}
-
-const getAllOperationsFromHafsql = async () => {
-  const client = new Client({
-    host: 'hafsql-sql.mahdiyari.info',
-    port: 5432,
-    database: 'haf_block_log',
-    user: 'hafsql_public',
-    password: 'hafsql_public'
-  })
-  await client.connect()
-  const result = await client.query<{ id: number; name: string }>(
-    'SELECT id, name FROM hafd.operation_types WHERE is_virtual=false'
-  )
-  await client.end()
-  return result.rows
 }
