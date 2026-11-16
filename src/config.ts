@@ -14,16 +14,19 @@ export const config = {
     'https://rpc.mahdiyari.info',
     'https://techcoderx.com',
     'https://hiveapi.actifit.io',
-    'https://api.c0ff33a.uk'
+    'https://api.c0ff33a.uk',
+    'https://api.syncad.com'
   ],
 
   /**
-   * Array Hive API node endpoints that support REST APIs
-   * Note: Without the trailing /
+   * Array Hive API node endpoints that support REST APIs -
+   * **Note**: Without the trailing /
    */
   restNodes: [
-    'https://api.hive.blog',
     'https://rpc.mahdiyari.info',
+    'https://api.syncad.com',
+    'https://api.hive.blog',
+    'https://api.openhive.network',
     'https://techcoderx.com',
     'https://hiveapi.actifit.io',
     'https://api.c0ff33a.uk'
