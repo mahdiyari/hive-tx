@@ -611,7 +611,7 @@ PAGES["rpc"] = (
     "rpc",
     "RPC and REST calls",
     "Use",
-    "callRPC, callREST, and callWithQuorum send requests to Hive nodes.",
+    "callRPC, callRPCBatch, callREST, and callWithQuorum send requests to Hive nodes.",
     """
 <h2>callRPC</h2>
 <p><code>callRPC</code> sends a JSON-RPC 2.0 request. The function returns the result. The function throws <code>RPCError</code> for a Hive RPC error.</p>
@@ -631,6 +631,12 @@ const props = await callRPC('condenser_api.get_dynamic_global_properties')</code
 </table>
 <p>If a node does not respond, the library selects the next URL in <code>config.nodes</code>.</p>
 <p>Hive API names are in the Hive developer documentation.</p>
+<h2>callRPCBatch</h2>
+<p><code>callRPCBatch</code> calls one method many times in a single JSON-RPC batch request. It takes a list of params, one entry per call, and returns the results in the same order. Failover, <code>timeout</code>, and <code>retry</code> work like <code>callRPC</code>. If any call fails with a Hive RPC error, the function throws <code>RPCError</code>.</p>
+<pre><code>import { callRPCBatch } from 'hive-tx'
+
+const blocks = await callRPCBatch('condenser_api.get_block', [[1], [2], [3]])</code></pre>
+<p>Use it to fetch many items with one request instead of many. Keep batches modest, such as 20 to 50 calls; nodes time out on very large responses.</p>
 <h2>callWithQuorum</h2>
 <p><code>callWithQuorum</code> sends the same method to more than one node. The function returns a result only if that number of nodes give the same JSON.</p>
 <pre><code>import { callWithQuorum } from 'hive-tx'
@@ -894,6 +900,7 @@ PAGES["reference"] = (
   Signature,
   Memo,
   callRPC,
+  callRPCBatch,
   callREST,
   callWithQuorum,
   RPCError,
@@ -923,6 +930,8 @@ PAGES["reference"] = (
 }</code></pre>
 <h2>callRPC</h2>
 <p><code>callRPC(method, params?, timeout?, retry?): Promise&lt;T&gt;</code></p>
+<h2>callRPCBatch</h2>
+<p><code>callRPCBatch(method, paramsList, timeout?, retry?): Promise&lt;T[]&gt;</code></p>
 <h2>callWithQuorum</h2>
 <p><code>callWithQuorum(method, params?, quorum?): Promise&lt;T&gt;</code></p>
 <h2>callREST</h2>

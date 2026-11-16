@@ -4,7 +4,7 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RPC and REST calls — hive-tx</title>
-  <meta name="description" content="callRPC, callREST, and callWithQuorum send requests to Hive nodes.">
+  <meta name="description" content="callRPC, callRPCBatch, callREST, and callWithQuorum send requests to Hive nodes.">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -51,7 +51,7 @@
       <article>
         <p class="kicker">Use</p>
         <h1>RPC and REST calls</h1>
-        <p class="lead">callRPC, callREST, and callWithQuorum send requests to Hive nodes.</p>
+        <p class="lead">callRPC, callRPCBatch, callREST, and callWithQuorum send requests to Hive nodes.</p>
         
 <h2>callRPC</h2>
 <p><code>callRPC</code> sends a JSON-RPC 2.0 request. The function returns the result. The function throws <code>RPCError</code> for a Hive RPC error.</p>
@@ -71,6 +71,12 @@ const props = await callRPC('condenser_api.get_dynamic_global_properties')</code
 </table>
 <p>If a node does not respond, the library selects the next URL in <code>config.nodes</code>.</p>
 <p>Hive API names are in the Hive developer documentation.</p>
+<h2>callRPCBatch</h2>
+<p><code>callRPCBatch</code> calls one method many times in a single JSON-RPC batch request. It takes a list of params, one entry per call, and returns the results in the same order. Failover, <code>timeout</code>, and <code>retry</code> work like <code>callRPC</code>. If any call fails with a Hive RPC error, the function throws <code>RPCError</code>.</p>
+<pre><code class="language-javascript">import { callRPCBatch } from 'hive-tx'
+
+const blocks = await callRPCBatch('condenser_api.get_block', [[1], [2], [3]])</code></pre>
+<p>Use it to fetch many items with one request instead of many. Keep batches modest, such as 20 to 50 calls; nodes time out on very large responses.</p>
 <h2>callWithQuorum</h2>
 <p><code>callWithQuorum</code> sends the same method to more than one node. The function returns a result only if that number of nodes give the same JSON.</p>
 <pre><code class="language-javascript">import { callWithQuorum } from 'hive-tx'
