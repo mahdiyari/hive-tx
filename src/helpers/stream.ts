@@ -1,6 +1,5 @@
 import { AppliedOperation, Block } from '../types.js'
-import { callRPCBatch } from './call.js'
-import { getDynamicGlobalProperties } from './getDynamicProps.js'
+import { callRPC, callRPCBatch } from './call.js'
 import { sleep } from './sleep.js'
 
 /** Blocks fetched per request while catching up */
@@ -28,8 +27,8 @@ async function* followChain<T>(
   { from, to = Infinity }: StreamOptions,
   fetchBatch: (nums: number[]) => Promise<(T | null)[]>
 ): AsyncGenerator<[number, T]> {
-  // Cache period 0: always fetch fresh props
-  let lib = (await getDynamicGlobalProperties(0)).last_irreversible_block_num
+  let lib = (await callRPC('condenser_api.get_dynamic_global_properties'))
+    .last_irreversible_block_num
   let next = from ?? lib
   if (!Number.isInteger(next) || next < 1) {
     throw new Error('from must be a block number >= 1')
@@ -37,7 +36,8 @@ async function* followChain<T>(
   while (next <= to) {
     if (next > lib) {
       await sleep(POLL_INTERVAL)
-      lib = (await getDynamicGlobalProperties(0)).last_irreversible_block_num
+      lib = (await callRPC('condenser_api.get_dynamic_global_properties'))
+        .last_irreversible_block_num
       continue
     }
     const count = Math.min(Math.min(lib, to) - next + 1, BATCH_SIZE)

@@ -313,20 +313,22 @@ export const coverageTests = async () => {
     }
   })
 
-  await runTest('utils.vestsToHP and utils.hpToVests', () => {
-    const props = {
-      total_vesting_fund_hive: '218384825.222 HIVE',
-      total_vesting_shares: '349994535499.081394 VESTS'
-    }
-    const hp = utils.vestsToHP('349994535499.081394 VESTS', props)
-    return hp === 218384825.222 && Math.abs(utils.hpToVests(utils.vestsToHP(1000, props), props) - 1000) < 1e-9
+  await runTest('utils.vestsToHP and utils.hpToVests', async () => {
+    const props = await callRPC('condenser_api.get_dynamic_global_properties')
+    const hp = await utils.vestsToHP(props.total_vesting_shares)
+    const fund = utils.parseAsset(props.total_vesting_fund_hive).amount
+    // the cached props may be a block apart from ours
+    return (
+      Math.abs(hp / fund - 1) < 1e-4 &&
+      Math.abs((await utils.hpToVests(await utils.vestsToHP(1000))) - 1000) < 1e-9
+    )
   })
 
-  await runTest('utils mana matches chain values', () => {
+  await runTest('utils mana matches chain values', async () => {
     const at = (seconds: number) => (1794864276 + seconds) * 1000
-    const up = utils.getVotingMana(stakeAccount, at(0))
-    const down = utils.getDownvoteMana(stakeAccount, at(0))
-    const rc = utils.getRCMana(
+    const up = await utils.getVotingMana(stakeAccount, at(0))
+    const down = await utils.getDownvoteMana(stakeAccount, at(0))
+    const rc = await utils.getRCMana(
       { max_rc: 100, rc_manabar: { current_mana: 50, last_update_time: 1794864276 } },
       at(43200)
     )
@@ -334,8 +336,8 @@ export const coverageTests = async () => {
       up.max === chainMaxMana &&
       up.current === 153710560566990 &&
       // one hour regenerates max / 120
-      utils.getVotingMana(stakeAccount, at(3600)).current === 155083793627666 &&
-      utils.getVotingMana(stakeAccount, at(432000)).percentage === 100 &&
+      (await utils.getVotingMana(stakeAccount, at(3600))).current === 155083793627666 &&
+      (await utils.getVotingMana(stakeAccount, at(432000))).percentage === 100 &&
       down.max === 41196991820301 &&
       down.percentage === 100 &&
       rc.current === 60 &&
@@ -343,7 +345,34 @@ export const coverageTests = async () => {
     )
   })
 
-  await runTest('utils.getVoteRShares matches an on-chain vote', () => {
+  await runTest('utils helpers fetch by name with one cached request', async () => {
+    const realFetch = globalThis.fetch
+    let requests = 0
+    globalThis.fetch = (...args) => {
+      requests++
+      return realFetch(...args)
+    }
+    try {
+      const [up, down] = await Promise.all([
+        utils.getVotingMana('hiveio'),
+        utils.getDownvoteMana('hiveio')
+      ])
+      const rc = await utils.getRCMana('hiveio')
+      // valid but unregistered name; names over 16 characters are rejected by the node instead
+      const missing = await utils.getVotingMana('no-such-acct-x1').catch((e) => e.message)
+      return (
+        requests === 3 &&
+        up.max > 0 &&
+        down.max === Math.floor(up.max * 0.25) &&
+        rc.max > 0 &&
+        missing === 'Account not found: no-such-acct-x1'
+      )
+    } finally {
+      globalThis.fetch = realFetch
+    }
+  })
+
+  await runTest('utils.getVoteRShares matches an on-chain vote', async () => {
     // A 5.34% vote by a powering-down account; the chain gave it 636980901 rshares
     const voter = {
       vesting_shares: '692587.108537 VESTS',
@@ -356,20 +385,23 @@ export const coverageTests = async () => {
       downvote_manabar: { current_mana: 160810135935, last_update_time: 1794864393 }
     }
     return (
-      utils.getVoteRShares(voter, 534) === 636980901 &&
-      utils.getVoteRShares(voter, -534) === -636980901 &&
+      (await utils.getVoteRShares(voter, 534)) === 636980901 &&
+      (await utils.getVoteRShares(voter, -534)) === -636980901 &&
       // below the dust threshold a vote adds nothing
-      utils.getVoteRShares(voter, 1) === 0
+      (await utils.getVoteRShares(voter, 1)) === 0
     )
   })
 
-  await runTest('utils.getVoteValue', () => {
-    const fund = { reward_balance: '1000.000 HIVE', recent_claims: '1000000000000' }
-    const price = { base: '0.250 HBD', quote: '1.000 HIVE' }
-    // a full vote on chainMaxMana: 2% of max mana minus dust, as a share of the pool, in HBD
+  await runTest('utils.getVoteValue', async () => {
+    const fund = await callRPC('condenser_api.get_reward_fund', ['post'])
+    const price = await callRPC('condenser_api.get_current_median_history_price')
+    // a full vote: 2% of max mana minus dust, as a share of the pool, in HBD
     const rshares = Math.ceil(chainMaxMana * 0.02) - 50_000_000
-    const expected = ((rshares * 1000) / 1e12) * 0.25
-    return Math.abs(utils.getVoteValue(stakeAccount, fund, price) - expected) < 1e-9
+    const expected =
+      ((rshares * utils.parseAsset(fund.reward_balance).amount) / Number(fund.recent_claims)) *
+      (utils.parseAsset(price.base).amount / utils.parseAsset(price.quote).amount)
+    // the cached fund may be a block apart from ours
+    return Math.abs((await utils.getVoteValue(stakeAccount)) / expected - 1) < 1e-3
   })
 
   await runTest('utils.formatReputation', () => {
