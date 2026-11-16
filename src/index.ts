@@ -1,6 +1,6 @@
 export { Transaction } from './Transaction.js'
 export { PrivateKey } from './helpers/PrivateKey.js'
-export { callRPC, callREST, callWithQuorum } from './helpers/call.js'
+export { callRPC, callREST, callWithQuorum, RPCError } from './helpers/call.js'
 export { config } from './config.js'
 export { PublicKey } from './helpers/PublicKey.js'
 export { Signature } from './helpers/Signature.js'

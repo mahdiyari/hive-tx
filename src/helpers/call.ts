@@ -3,8 +3,6 @@ import { APIMethods, APIPaths, CallResponse } from '../types.js'
 
 let rpcIndex = 0
 let restIndex = 0
-let rpcTries = 0
-let restTries = 0
 
 export class RPCError extends Error {
   name = 'RPCError'
@@ -114,22 +112,16 @@ export const callRPC = async <T = any>(
   if (!Array.isArray(config.nodes)) {
     throw new Error('config.nodes is not an array')
   }
-  const node = config.nodes[rpcIndex]
-  try {
-    const res = await jsonRPCCall(node, method, params, timeout)
-    rpcTries = 0
-    return res as T
-  } catch (e: any) {
-    // Throw on actual RPC errors
-    if (e instanceof RPCError) {
-      throw e
+  for (let tries = 0; ; tries++) {
+    try {
+      return await jsonRPCCall(config.nodes[rpcIndex], method, params, timeout)
+    } catch (e) {
+      // RPC errors come from the chain; another node would give the same answer
+      if (e instanceof RPCError || tries >= retry) {
+        throw e
+      }
+      changeRPCNode()
     }
-    rpcTries++
-    if (rpcTries > retry) {
-      throw e
-    }
-    changeRPCNode()
-    return callRPC(method, params, timeout, retry)
   }
 }
 
@@ -218,50 +210,39 @@ export async function callREST<Api extends APIMethods, P extends keyof APIPaths[
   if (!Array.isArray(config.restNodes)) {
     throw new Error('config.restNodes is not an array')
   }
-  const node = config.restNodes[restIndex]
-  const baseUrl = node + apiMethods[api]
   let path = endpoint as string
-  const paramObj = params || ({} as Record<string, any>)
-  const processedPathParams = new Set<string>()
-
-  // Replace path params ONLY
-  Object.entries(paramObj).forEach(([key, value]) => {
+  const query = new URLSearchParams()
+  for (const [key, value] of Object.entries(params || {})) {
     if (path.includes(`{${key}}`)) {
       path = path.replace(`{${key}}`, encodeURIComponent(String(value)))
-      processedPathParams.add(key)
+    } else if (Array.isArray(value)) {
+      value.forEach((v) => query.append(key, String(v)))
+    } else {
+      query.set(key, String(value))
     }
-  })
-  const url = new URL(baseUrl + path)
-  // Add ONLY remaining params as query (if any)
-  Object.entries(paramObj).forEach(([key, value]) => {
-    if (!processedPathParams.has(key)) {
-      if (Array.isArray(value)) {
-        value.forEach((v) => url.searchParams.append(key, String(v)))
-      } else {
-        url.searchParams.set(key, String(value))
+  }
+  const search = query.size ? `?${query}` : ''
+  for (let tries = 0; ; tries++) {
+    const url = config.restNodes[restIndex] + apiMethods[api] + path + search
+    let status = 0
+    try {
+      const response = await fetch(url, { signal: AbortSignal.timeout(timeout) })
+      status = response.status
+      if (status === 404) {
+        throw new Error('HTTP 404 - Hint: can happen on wrong params')
       }
+      if (status >= 500) {
+        throw new Error(`HTTP ${status} from ${url}`)
+      }
+      // Trust the node's OpenAPI schema for the response shape
+      return (await response.json()) as GetResponse<SafeGet<APIPaths[Api][P]>>
+    } catch (e) {
+      // A 404 means wrong params, not a bad node
+      if (status === 404 || tries >= retry) {
+        throw e
+      }
+      changeRESTNode()
     }
-  })
-  let response
-  try {
-    response = await fetch(url.toString(), {
-      signal: AbortSignal.timeout(timeout)
-    })
-    restTries = 0
-    if (response?.status === 404) {
-      throw new Error(`HTTP 404 - Hint: can happen on wrong params`)
-    }
-    return response.json() as any
-  } catch (e) {
-    if (response?.status === 404) {
-      throw e
-    }
-    restTries++
-    if (restTries > retry) {
-      throw e
-    }
-    changeRESTNode()
-    return callREST(api, endpoint, params, timeout, retry)
   }
 }
 

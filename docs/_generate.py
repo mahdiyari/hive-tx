@@ -430,12 +430,12 @@ tx.sign(PrivateKey.from('5J...active-key'))
 await tx.broadcast()</code></pre>
 <p><code>key</code> is required. It is the current signing public key.</p>
 <h2>Handle RPC errors</h2>
-<pre><code>import { callRPC } from 'hive-tx'
+<pre><code>import { callRPC, RPCError } from 'hive-tx'
 
 try {
   await callRPC('condenser_api.get_accounts', [['alice']])
 } catch (e) {
-  if (e && e.name === 'RPCError') {
+  if (e instanceof RPCError) {
     console.log(e.code, e.message, e.data)
   } else {
     throw e
@@ -859,6 +859,7 @@ PAGES["reference"] = (
   callRPC,
   callREST,
   callWithQuorum,
+  RPCError,
   config,
   utils
 } from 'hive-tx'</code></pre>
