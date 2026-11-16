@@ -163,6 +163,66 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  '/version': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get HiveSense's version
+     * @description Get the git commit hash of the deployed HiveSense version.
+     *     Returns `unspecified` when the image was built without a git hash.
+     *
+     *     SQL example
+     *     * `SELECT hivesense_endpoints.get_hivesense_version();`
+     *
+     *     REST call example
+     *     * `GET '/hivesense-api/version'`
+     */
+    get: operations['hivesense_endpoints.get_hivesense_version']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  '/sync-status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /**
+     * Get HiveSense's sync status
+     * @description Get the last block whose embeddings HiveSense has applied, as an object
+     *     containing both the block number and its timestamp (UTC). This is the
+     *     uniform HAF-app sync/health endpoint: the timestamp lets a consumer
+     *     compute staleness with a single call (`age = now() - last_block_time`)
+     *     without needing a separate head-block reference.
+     *
+     *     HiveSense syncs embeddings out of band from a remote embedding API, so
+     *     this value may lag chain head during catch-up.
+     *
+     *     SQL example
+     *     * `SELECT hivesense_endpoints.get_hivesense_sync_status();`
+     *
+     *     REST call example
+     *     * `GET '/hivesense-api/sync-status'`
+     */
+    get: operations['hivesense_endpoints.get_hivesense_sync_status']
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
 }
 export type webhooks = Record<string, never>
 export interface components {
@@ -187,6 +247,21 @@ export interface components {
       overlap_amount?: number
       min_token_threshold?: number
       max_embeddings_per_post?: number
+      skipped_op_count?: number
+    }
+    syncchain: {
+      /** Format: uuid */
+      sync_uuid?: string
+      base_url?: string | null
+      llm?: string
+      embedding_dimensionality?: number
+      document_prefix?: string
+      query_prefix?: string
+      tokens_per_chunk?: number
+      overlap_amount?: number
+      min_token_threshold?: number
+      max_embeddings_per_post?: number
+      skipped_op_count?: number
     }
   }
   responses: never
@@ -440,6 +515,80 @@ export interface operations {
         content: {
           /** @example {} */
           'application/json': string
+        }
+      }
+    }
+  }
+  'hivesense_endpoints.get_hivesense_version': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /**
+       * @description HiveSense version (git commit hash)
+       *
+       *     * Returns `TEXT`
+       */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /** @example c2fed8958584511ef1a66dab3dbac8c40f3518f0 */
+          'application/json': string
+        }
+      }
+      /** @description App not installed */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content?: never
+      }
+    }
+  }
+  'hivesense_endpoints.get_hivesense_sync_status': {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /**
+       * @description Last block synced by HiveSense together with its timestamp.
+       *     `last_block_time` is null if no block has been processed yet.
+       *     While the HAF instance is still in massive sync (indexes not yet
+       *     built) the call fails fast with an error rather than executing an
+       *     unindexed lookup.
+       *
+       *     * Returns `JSON`
+       */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          /**
+           * @example {
+           *       "last_block_num": 5000000,
+           *       "last_block_time": "2016-09-15T19:47:21"
+           *     }
+           */
+          'application/json': {
+            /** @description highest block number whose embeddings HiveSense has applied */
+            last_block_num?: number
+            /**
+             * Format: date-time
+             * @description UTC timestamp of that block
+             */
+            last_block_time?: string
+          }
         }
       }
     }
