@@ -2,6 +2,7 @@ import { Serializer } from './serializer.js'
 import { ByteBuffer } from './ByteBuffer.js'
 import { PublicKey } from './PublicKey.js'
 import { bytesToHex, randomBytes } from '@noble/hashes/utils.js'
+import type { WitnessSetPropertiesOperation } from '../types.js'
 
 export * from './chainMath.js'
 export * from './keys.js'
@@ -174,11 +175,11 @@ const reduceFunction = (
 export const buildWitnessSetProperties = (
   owner: string,
   props: WitnessProps
-): ['witness_set_properties', { extensions: never[]; owner: string; props: any }] => {
-  const data = {
+): ['witness_set_properties', WitnessSetPropertiesOperation] => {
+  const data: WitnessSetPropertiesOperation = {
     extensions: [],
     owner,
-    props: <any>[]
+    props: []
   }
   for (const key of Object.keys(props)) {
     let type
@@ -209,7 +210,7 @@ export const buildWitnessSetProperties = (
     }
     data.props.push([key, serialize(type, props[key])])
   }
-  data.props.sort((a: any, b: any) => a[0].localeCompare(b[0]))
+  data.props.sort((a, b) => a[0].localeCompare(b[0]))
   return ['witness_set_properties', data]
 }
 
