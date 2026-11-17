@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1280 640" width="1280" height="640">
+  <defs>
+    <pattern id="hex" width="56" height="97" patternUnits="userSpaceOnUse" patternTransform="scale(1.1)">
+      <path d="M28 0 L56 16 L56 48.5 L28 64.5 L0 48.5 L0 16 Z M28 64.5 L28 97" fill="none" stroke="#fff" stroke-opacity="0.05" stroke-width="1.5"/>
+    </pattern>
+    <radialGradient id="glow" cx="0.78" cy="0.5" r="0.5">
+      <stop offset="0" stop-color="#E31337" stop-opacity="0.28"/>
+      <stop offset="1" stop-color="#E31337" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+  <rect width="1280" height="640" fill="#0F1115"/>
+  <rect width="1280" height="640" fill="url(#hex)"/>
+  <rect width="1280" height="640" fill="url(#glow)"/>
+  <g transform="translate(820,140) scale(1.8)">
+    <g fill="none" stroke="#F2F2F2" stroke-width="14" stroke-linecap="round" stroke-linejoin="round">
+      <polyline points="86,28 30.7,60 30.7,140 86,172"/>
+      <polyline points="114,28 169.3,60 169.3,140 114,172"/>
+    </g>
+    <!-- Official Hive mark (hive.io/hive-branding.zip, hextacular.svg), 220x190 scaled into the brackets -->
+    <g transform="translate(62,67.2) scale(0.345)" fill="#E31337">
+      <path d="M157.272625,107.263942 C157.998992,107.263942 158.45262,108.051463 158.088736,108.68075 L111.33839,189.528945 C111.169808,189.820485 110.858795,190 110.522279,190 L81.9443812,190 C81.2180145,190 80.764386,189.212478 81.1282705,188.583191 L127.878616,107.734996 C128.047199,107.443456 128.358211,107.263942 128.694727,107.263942 L157.272625,107.263942 Z M129.477721,84.0901367 C129.141205,84.0901367 128.830192,83.9106218 128.66161,83.6190818 L81.1282705,1.41680884 C80.764386,0.787521511 81.2180145,0 81.9443812,0 L110.522279,0 C110.858795,0 111.169808,0.179514873 111.33839,0.471054898 L158.87173,82.6733278 C159.235614,83.3026152 158.781986,84.0901367 158.055619,84.0901367 L129.477721,84.0901367 Z"/>
+      <path d="M135.128406 1.41635199C134.76385.787064228 135.218932 0 135.947343 0L164.565951 0C164.903712 0 165.215845.179714185 165.384888.47151174L219.873006 94.5275799C220.042331 94.8198642 220.042331 95.1801358 219.873006 95.4724201L165.384888 189.528488C165.215845 189.820286 164.903712 190 164.565951 190L135.947343 190C135.218932 190 134.76385 189.212936 135.128406 188.583648L189.342845 95 135.128406 1.41635199zM111.870216 94.5240823C112.042446 94.816752 112.043313 95.1785591 111.872487 95.4720377L57.1252257 189.528106C56.7599958 190.155572 55.8478414 190.157723 55.4796094 189.531986L.129783614 95.4759177C-.0424457704 95.183248-.0433125021 94.8214409.127512727 94.5279623L54.8747743.471894257C55.2400042-.15557243 56.1521586-.157723129 56.5203906.468014185L111.870216 94.5240823z"/>
+    </g>
+  </g>
+  <g font-family="JetBrains Mono, ui-monospace, Menlo, Consolas, monospace">
+    <text x="96" y="232" font-size="104" font-weight="800" letter-spacing="-4" fill="#F2F2F2">hive<tspan fill="#E31337">-tx</tspan></text>
+    <text x="100" y="292" font-size="30" fill="#A8ADB7">Lightweight TypeScript SDK for Hive</text>
+    <text x="100" y="340" font-size="26" fill="#E31337">The best Hive library in the universe.</text>
+    <g font-size="22" fill="#F2F2F2">
+      <rect x="100" y="392" width="214" height="48" rx="24" fill="none" stroke="#3A3F4B" stroke-width="2"/>
+      <text x="207" y="423" text-anchor="middle">0 dependencies</text>
+      <rect x="330" y="392" width="258" height="48" rx="24" fill="none" stroke="#3A3F4B" stroke-width="2"/>
+      <text x="459" y="423" text-anchor="middle">Node · Web · Edge</text>
+    </g>
+    <text x="100" y="520" font-size="24" fill="#6B7180"><tspan fill="#E31337">$</tspan> npm install hive-tx</text>
+  </g>
+</svg>

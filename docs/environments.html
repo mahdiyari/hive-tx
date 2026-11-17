@@ -4,7 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Environments — hive-tx</title>
-  <meta name="description" content="hive-tx supports Node.js, browsers, workers, and serverless runtimes.">
+  <meta name="description" content="hive-tx runs in Node.js, browsers, workers, and serverless runtimes.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Environments — hive-tx">
+  <meta property="og:description" content="hive-tx runs in Node.js, browsers, workers, and serverless runtimes.">
+  <meta property="og:image" content="https://mahdiyari.github.io/hive-tx/assets/cover.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -41,6 +46,7 @@
 <a href="keys.html" data-page="keys">Keys</a>
 <a href="memo.html" data-page="memo">Memos</a>
 <a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="streams.html" data-page="streams">Streams</a>
 <a href="config.html" data-page="config">Configuration</a>
 <a href="utils.html" data-page="utils">Utilities</a>
 <label>Reference</label>
@@ -51,37 +57,38 @@
       <article>
         <p class="kicker">Reference</p>
         <h1>Environments</h1>
-        <p class="lead">hive-tx supports Node.js, browsers, workers, and serverless runtimes.</p>
+        <p class="lead">hive-tx runs in Node.js, browsers, workers, and serverless runtimes.</p>
         
 <h2>Module formats</h2>
-<p>The package type is <code>module</code>. The package also ships CommonJS.</p>
+<p>The package is ESM and also ships CommonJS:</p>
 <ul>
   <li>ESM: <code>import { PrivateKey } from 'hive-tx'</code></li>
   <li>CommonJS: <code>const { PrivateKey } = require('hive-tx')</code></li>
 </ul>
-<p>Use version 7.2.1 or later. Version 7.2.0 CommonJS throws an error on key encoding.</p>
+<p>Use 7.2.1 or later with CommonJS: the 7.2.0 CommonJS build is broken.</p>
 <h2>Node.js</h2>
-<p>The engine field is <code>node &gt;= 20</code>. The library uses <code>fetch</code> and <code>AbortSignal.timeout</code>.</p>
+<p>Node.js 20 or later. The library uses the built-in <code>fetch</code> and <code>AbortSignal.timeout</code>.</p>
 <h2>Browser and CDN</h2>
-<p>Load <code>dist/index.mjs</code>. The file has no extra chunk. Crypto code is in the file.</p>
+<p>Load <code>dist/index.mjs</code>. It is a single file with the crypto code inside, so there are no extra chunks to fetch.</p>
 <h2>Serverless</h2>
-<p>The build has no nested runtime packages. A Lambda or a Worker can load the file without <code>bs58</code> or <code>@noble/*</code> in <code>node_modules</code>.</p>
-<p>Do not change <code>config.nodes</code> in each concurrent invocation if those invocations share a process.</p>
+<p>The build has no runtime dependencies, so a Lambda or a Worker loads it without <code>bs58</code> or <code>@noble/*</code> in <code>node_modules</code>.</p>
+<p>Invocations that share a process share <code>config</code>; do not change <code>config.nodes</code> per invocation.</p>
 <h2>Tests</h2>
-<p>From 7.2.1 the published files are self-contained. Jest 30 can load hive-tx in the Node environment:</p>
+<p>Jest 30 loads hive-tx in the Node environment:</p>
 <pre><code class="language-javascript">const { PrivateKey } = require('hive-tx')
 
 test('derives a posting key', () => {
   const pub = PrivateKey.fromLogin('alice', 'x', 'posting').createPublic().toString()
   expect(pub.startsWith('STM')).toBe(true)
 })</code></pre>
-<p>ESM Jest also works with <code>NODE_OPTIONS=--experimental-vm-modules</code> and a <code>.mjs</code> test file. Version 7.2.0 CommonJS fails in Jest because of a <code>bs58</code> interop bug. Use 7.2.1 or later.</p>
+<p>ESM Jest works too, with <code>NODE_OPTIONS=--experimental-vm-modules</code> and a <code>.mjs</code> test file.</p>
 
         <p class="footer-note">hive-tx is MIT licensed.</p>
       </article>
     </main>
   </div>
-  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
+    integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

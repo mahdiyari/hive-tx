@@ -4,7 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Quick start — hive-tx</title>
-  <meta name="description" content="Install the package. Create a vote. Call an API. Derive a key.">
+  <meta name="description" content="Cast a vote, send a transfer, call an API, and derive a key.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Quick start — hive-tx">
+  <meta property="og:description" content="Cast a vote, send a transfer, call an API, and derive a key.">
+  <meta property="og:image" content="https://mahdiyari.github.io/hive-tx/assets/cover.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -41,6 +46,7 @@
 <a href="keys.html" data-page="keys">Keys</a>
 <a href="memo.html" data-page="memo">Memos</a>
 <a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="streams.html" data-page="streams">Streams</a>
 <a href="config.html" data-page="config">Configuration</a>
 <a href="utils.html" data-page="utils">Utilities</a>
 <label>Reference</label>
@@ -51,17 +57,16 @@
       <article>
         <p class="kicker">Start</p>
         <h1>Quick start</h1>
-        <p class="lead">Install the package. Create a vote. Call an API. Derive a key.</p>
+        <p class="lead">Cast a vote, send a transfer, call an API, and derive a key.</p>
         
 <h2>Install</h2>
-<pre><code class="language-bash">npm install hive-tx --save</code></pre>
-<pre><code class="language-javascript">import { Transaction, PrivateKey, callRPC } from 'hive-tx'</code></pre>
-<h2>Create a vote</h2>
+<pre><code class="language-bash">npm install hive-tx</code></pre>
+<h2>Cast a vote</h2>
 <ol class="steps">
-  <li>Create a <code>Transaction</code> object.</li>
+  <li>Create a <code>Transaction</code>.</li>
   <li>Add a <code>vote</code> operation.</li>
-  <li>Load the posting private key.</li>
-  <li>Sign. Broadcast.</li>
+  <li>Sign it with the voter's posting key.</li>
+  <li>Broadcast it.</li>
 </ol>
 <pre><code class="language-javascript">import { Transaction, PrivateKey } from 'hive-tx'
 
@@ -79,9 +84,14 @@ const privateKey = PrivateKey.from(
 tx.sign(privateKey)
 const result = await tx.broadcast()
 console.log(result.tx_id)</code></pre>
-<p><code>weight</code> 10000 is a 100 percent upvote. A negative weight is a downvote.</p>
-<p>A vote needs the posting key. A transfer needs the active key. If one transaction mixes those operations, sign with both keys.</p>
-<h2>Create a transfer</h2>
+<div class="callout note">
+  <strong>Note</strong>
+  This is the posting key of <code>guest123</code>, a public demo account, so the example runs as-is and casts a real 95% vote. Use your own account and key in your app.
+</div>
+<p><code>weight</code> runs from -10000 to 10000: 10000 is a full upvote, and a negative weight is a downvote.</p>
+<h2>Which key to use</h2>
+<p>Your private keys are on your Hive wallet's keys page. Use the lowest role an operation needs: posting for votes, comments, and follows; active for transfers and other fund operations. Never put an owner key in app code. If one transaction mixes posting and active operations, sign it with both keys.</p>
+<h2>Send a transfer</h2>
 <pre><code class="language-javascript">const tx = new Transaction()
 await tx.addOperation('transfer', {
   from: 'sender',
@@ -97,22 +107,22 @@ console.log(result.tx_id, result.status)</code></pre>
 
 const accounts = await callRPC('condenser_api.get_accounts', [['mahdiyari']])
 console.log(accounts[0].name, accounts[0].balance)</code></pre>
-<p>On RPC errors the function throws <code>RPCError</code>. It does not wrap the result in <code>.result</code>.</p>
-<h2>Create keys</h2>
-<pre><code class="language-javascript">import { PrivateKey, PublicKey } from 'hive-tx'
+<p><code>callRPC</code> returns the result directly and throws <code>RPCError</code> when the node returns an error.</p>
+<h2>Derive keys</h2>
+<pre><code class="language-javascript">import { PrivateKey } from 'hive-tx'
 
-const key1 = PrivateKey.from('5JRaypasxMx1L97ZUX7YuC5Psb5EAbF821kkAGtBj7xCJFQcbLg')
-const key2 = PrivateKey.randomKey()
-const key3 = PrivateKey.fromLogin('username', 'password', 'posting')
-const pub = key1.createPublic()
-console.log(pub.toString())</code></pre>
+const fromWif = PrivateKey.from('5JRaypasxMx1L97ZUX7YuC5Psb5EAbF821kkAGtBj7xCJFQcbLg')
+const random = PrivateKey.randomKey()
+const fromPassword = PrivateKey.fromLogin('username', 'password', 'posting')
+console.log(fromWif.createPublic().toString())</code></pre>
 <p>More patterns are on the <a href="examples.html">examples</a> page.</p>
 
         <p class="footer-note">hive-tx is MIT licensed.</p>
       </article>
     </main>
   </div>
-  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
+    integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

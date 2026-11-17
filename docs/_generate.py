@@ -15,6 +15,7 @@ NAV = [
     ("Keys", "keys.html", "keys"),
     ("Memos", "memo.html", "memo"),
     ("RPC and REST", "rpc.html", "rpc"),
+    ("Streams", "streams.html", "streams"),
     ("Configuration", "config.html", "config"),
     ("Utilities", "utils.html", "utils"),
     ("Environments", "environments.html", "environments"),
@@ -47,7 +48,7 @@ def tag_code(body: str) -> str:
 def nav_html(current: str) -> str:
     groups = [
         ("Start", ["index", "install", "start", "examples"]),
-        ("Use", ["transactions", "keys", "memo", "rpc", "config", "utils"]),
+        ("Use", ["transactions", "keys", "memo", "rpc", "streams", "config", "utils"]),
         ("Reference", ["environments", "migrate", "reference"]),
     ]
     by_id = {i: (t, h) for t, h, i in NAV}
@@ -69,6 +70,11 @@ def page(pid: str, title: str, kicker: str, lead: str, body: str) -> str:
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>{title} — hive-tx</title>
   <meta name="description" content="{lead}">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="{title} — hive-tx">
+  <meta property="og:description" content="{lead}">
+  <meta property="og:image" content="https://mahdiyari.github.io/hive-tx/assets/cover.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -106,7 +112,8 @@ def page(pid: str, title: str, kicker: str, lead: str, body: str) -> str:
       </article>
     </main>
   </div>
-  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
+    integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>
@@ -119,35 +126,36 @@ PAGES["index"] = (
     "index",
     "hive-tx documentation",
     "Overview",
-    "hive-tx is a TypeScript library for the Hive blockchain. The library creates transactions, signs data, and calls Hive APIs.",
+    "hive-tx is a lightweight TypeScript SDK for the Hive blockchain. It builds, signs, and broadcasts transactions, calls Hive APIs, and streams the chain.",
     """
 <div class="cards">
-  <a class="card" href="install.html"><h3>Install</h3><p>Add the package. Use Node.js 20 or later.</p></a>
-  <a class="card" href="start.html"><h3>Quick start</h3><p>Create one vote transaction and broadcast it.</p></a>
+  <a class="card" href="install.html"><h3>Install</h3><p>Node.js 20+, browsers, workers, and serverless runtimes.</p></a>
+  <a class="card" href="start.html"><h3>Quick start</h3><p>Sign and broadcast your first vote.</p></a>
   <a class="card" href="examples.html"><h3>Examples</h3><p>Transfers, comments, memos, RPC, keys, and more.</p></a>
-  <a class="card" href="reference.html"><h3>API reference</h3><p>Classes, functions, and types.</p></a>
+  <a class="card" href="reference.html"><h3>API reference</h3><p>Every export and its signature.</p></a>
 </div>
-<h2>What the library does</h2>
-<p>hive-tx does this work:</p>
+<h2>What it does</h2>
 <ul>
-  <li>Build Hive operations with TypeScript types.</li>
-  <li>Sign operations with secp256k1 keys.</li>
-  <li>Broadcast signed transactions.</li>
-  <li>Call JSON-RPC methods and REST endpoints.</li>
-  <li>Encrypt memos and decrypt memos.</li>
+  <li>Builds operations with a TypeScript type per operation, then signs and broadcasts them.</li>
+  <li>Calls JSON-RPC with node failover, batch requests, and quorum calls that cross-check nodes.</li>
+  <li>Calls typed REST APIs: balance, hafah, hafbe, hivemind, and more.</li>
+  <li>Streams irreversible blocks and operations, virtual ones included, with no gaps or duplicates.</li>
+  <li>Computes voting mana, RC, Hive Power, vote value, APR, account value, and reputation.</li>
+  <li>Builds follow, mute, reblog, and community operations, permlinks, and account keys.</li>
+  <li>Creates keys, verifies signatures, and encrypts memos by public key or account name.</li>
 </ul>
-<p>The library runs in Node.js, in a browser, and in a serverless runtime. The package includes ESM and CommonJS builds. Crypto code is inside the build. The package has no runtime npm dependencies.</p>
+<p>It runs in Node.js, browsers, workers, and serverless runtimes. The package ships ESM and CommonJS builds and has no runtime dependencies: the crypto code is bundled.</p>
 <h2>Requirements</h2>
 <ul>
-  <li>Node.js 20 or later, or a browser that supports ES2024 and <code>fetch</code>.</li>
-  <li>A Hive account and the correct private key for each operation.</li>
+  <li>Node.js 20 or later, or a browser with ES2024 and <code>fetch</code>.</li>
+  <li>A Hive account and the right private key for each operation.</li>
 </ul>
-<h2>Document map</h2>
+<h2>Where to go next</h2>
 <ol>
-  <li>Install the package.</li>
-  <li>Complete the <a href="start.html">quick start</a>.</li>
-  <li>Copy a pattern from <a href="examples.html">examples</a>.</li>
-  <li>Use the API reference for names and parameters.</li>
+  <li><a href="install.html">Install</a> the package.</li>
+  <li>Work through the <a href="start.html">quick start</a>.</li>
+  <li>Copy a pattern from the <a href="examples.html">examples</a>.</li>
+  <li>Look up names and parameters in the <a href="reference.html">API reference</a>.</li>
 </ol>
 """,
 )
@@ -156,29 +164,24 @@ PAGES["install"] = (
     "install",
     "Install hive-tx",
     "Install",
-    "Add hive-tx to a Node.js project or load the ESM file in a browser.",
+    "Add hive-tx to a Node.js project, or load the ESM file in a browser.",
     """
 <h2>Node.js</h2>
 <p>Node.js 20 or later is required.</p>
-<ol class="steps">
-  <li>Open a terminal in the project directory.</li>
-  <li>Install the package.</li>
-</ol>
-<pre><code>npm install hive-tx --save</code></pre>
-<p>You can use pnpm or yarn. The package name is <code>hive-tx</code>.</p>
-<h2>Import the library</h2>
-<p>Use an ESM import:</p>
+<pre><code>npm install hive-tx</code></pre>
+<p>pnpm and yarn work too.</p>
+<h2>Import</h2>
+<p>ESM:</p>
 <pre><code>import { Transaction, PrivateKey, callRPC } from 'hive-tx'</code></pre>
-<p>Use a CommonJS require:</p>
+<p>CommonJS:</p>
 <pre><code>const { Transaction, PrivateKey, callRPC } = require('hive-tx')</code></pre>
-<p>Use hive-tx 7.2.1 or later for CommonJS. Version 7.2.0 CommonJS is not valid.</p>
 <h2>Browser</h2>
 <p>Load the ESM build from a CDN:</p>
 <pre><code>&lt;script type="module"&gt;
   import { Transaction, PrivateKey } from
     'https://cdn.jsdelivr.net/npm/hive-tx@7/dist/index.mjs'
 &lt;/script&gt;</code></pre>
-<h2>What the package contains</h2>
+<h2>Package contents</h2>
 <table>
   <thead><tr><th>File</th><th>Use</th></tr></thead>
   <tbody>
@@ -188,7 +191,7 @@ PAGES["install"] = (
     <tr><td><code>dist/index.d.cts</code></td><td>TypeScript types for CommonJS</td></tr>
   </tbody>
 </table>
-<p>The application selects the correct file through the <code>exports</code> field in <code>package.json</code>.</p>
+<p>The <code>exports</code> field in <code>package.json</code> picks the right file for your setup.</p>
 """,
 )
 
@@ -196,17 +199,16 @@ PAGES["start"] = (
     "start",
     "Quick start",
     "Start",
-    "Install the package. Create a vote. Call an API. Derive a key.",
+    "Cast a vote, send a transfer, call an API, and derive a key.",
     """
 <h2>Install</h2>
-<pre><code>npm install hive-tx --save</code></pre>
-<pre><code>import { Transaction, PrivateKey, callRPC } from 'hive-tx'</code></pre>
-<h2>Create a vote</h2>
+<pre><code>npm install hive-tx</code></pre>
+<h2>Cast a vote</h2>
 <ol class="steps">
-  <li>Create a <code>Transaction</code> object.</li>
+  <li>Create a <code>Transaction</code>.</li>
   <li>Add a <code>vote</code> operation.</li>
-  <li>Load the posting private key.</li>
-  <li>Sign. Broadcast.</li>
+  <li>Sign it with the voter's posting key.</li>
+  <li>Broadcast it.</li>
 </ol>
 <pre><code>import { Transaction, PrivateKey } from 'hive-tx'
 
@@ -224,9 +226,14 @@ const privateKey = PrivateKey.from(
 tx.sign(privateKey)
 const result = await tx.broadcast()
 console.log(result.tx_id)</code></pre>
-<p><code>weight</code> 10000 is a 100 percent upvote. A negative weight is a downvote.</p>
-<p>A vote needs the posting key. A transfer needs the active key. If one transaction mixes those operations, sign with both keys.</p>
-<h2>Create a transfer</h2>
+<div class="callout note">
+  <strong>Note</strong>
+  This is the posting key of <code>guest123</code>, a public demo account, so the example runs as-is and casts a real 95% vote. Use your own account and key in your app.
+</div>
+<p><code>weight</code> runs from -10000 to 10000: 10000 is a full upvote, and a negative weight is a downvote.</p>
+<h2>Which key to use</h2>
+<p>Your private keys are on your Hive wallet's keys page. Use the lowest role an operation needs: posting for votes, comments, and follows; active for transfers and other fund operations. Never put an owner key in app code. If one transaction mixes posting and active operations, sign it with both keys.</p>
+<h2>Send a transfer</h2>
 <pre><code>const tx = new Transaction()
 await tx.addOperation('transfer', {
   from: 'sender',
@@ -242,15 +249,14 @@ console.log(result.tx_id, result.status)</code></pre>
 
 const accounts = await callRPC('condenser_api.get_accounts', [['mahdiyari']])
 console.log(accounts[0].name, accounts[0].balance)</code></pre>
-<p>On RPC errors the function throws <code>RPCError</code>. It does not wrap the result in <code>.result</code>.</p>
-<h2>Create keys</h2>
-<pre><code>import { PrivateKey, PublicKey } from 'hive-tx'
+<p><code>callRPC</code> returns the result directly and throws <code>RPCError</code> when the node returns an error.</p>
+<h2>Derive keys</h2>
+<pre><code>import { PrivateKey } from 'hive-tx'
 
-const key1 = PrivateKey.from('5JRaypasxMx1L97ZUX7YuC5Psb5EAbF821kkAGtBj7xCJFQcbLg')
-const key2 = PrivateKey.randomKey()
-const key3 = PrivateKey.fromLogin('username', 'password', 'posting')
-const pub = key1.createPublic()
-console.log(pub.toString())</code></pre>
+const fromWif = PrivateKey.from('5JRaypasxMx1L97ZUX7YuC5Psb5EAbF821kkAGtBj7xCJFQcbLg')
+const random = PrivateKey.randomKey()
+const fromPassword = PrivateKey.fromLogin('username', 'password', 'posting')
+console.log(fromWif.createPublic().toString())</code></pre>
 <p>More patterns are on the <a href="examples.html">examples</a> page.</p>
 """,
 )
@@ -259,39 +265,36 @@ PAGES["examples"] = (
     "examples",
     "Examples",
     "Start",
-    "Copy these patterns. Replace keys and account names with your values.",
+    "Patterns to copy. Replace the keys and account names with your own.",
     """
 <h2>Transfer HIVE</h2>
 <pre><code>import { Transaction, PrivateKey } from 'hive-tx'
 
-async function transferHive() {
-  const tx = new Transaction()
-  await tx.addOperation('transfer', {
-    from: 'myaccount',
-    to: 'recipient',
-    amount: '1.000 HIVE',
-    memo: 'Thank you!'
-  })
-  const privateKey = PrivateKey.from('5J...active-key')
-  tx.sign(privateKey)
-  const result = await tx.broadcast()
-  console.log(result.tx_id, result.status)
-}</code></pre>
-<p>v7 returns <code>{ tx_id, status }</code>. It does not return <code>result.result.tx_id</code>.</p>
-<h2>Comment</h2>
-<pre><code>const tx = new Transaction()
+const tx = new Transaction()
+await tx.addOperation('transfer', {
+  from: 'myaccount',
+  to: 'recipient',
+  amount: '1.000 HIVE',
+  memo: 'Thank you!'
+})
+tx.sign(PrivateKey.from('5J...active-key'))
+const { tx_id, status } = await tx.broadcast()</code></pre>
+<h2>Post or comment</h2>
+<pre><code>import { Transaction, PrivateKey, utils } from 'hive-tx'
+
+const tx = new Transaction()
 await tx.addOperation('comment', {
   parent_author: '',
   parent_permlink: 'hive',
   author: 'myaccount',
-  permlink: 'hello-hive',
+  permlink: utils.createPermlink('Hello'),
   title: 'Hello',
   body: 'First post',
   json_metadata: JSON.stringify({ tags: ['hive'], app: 'hive-tx' })
 })
 tx.sign(PrivateKey.from('5J...posting-key'))
 await tx.broadcast()</code></pre>
-<p>A root post uses an empty <code>parent_author</code>. A reply sets <code>parent_author</code> and <code>parent_permlink</code> to the parent comment.</p>
+<p>A root post has an empty <code>parent_author</code>, and <code>parent_permlink</code> is its first tag. A reply sets both to the parent comment.</p>
 <h2>custom_json</h2>
 <pre><code>await tx.addOperation('custom_json', {
   required_auths: [],
@@ -303,6 +306,7 @@ await tx.broadcast()</code></pre>
     what: ['blog']
   }])
 })</code></pre>
+<p>For follows, mutes, reblogs, and communities, the social helpers in <a href="utils.html">utilities</a> build this for you.</p>
 <h2>Sign and verify</h2>
 <pre><code>import { Transaction, PrivateKey, Signature } from 'hive-tx'
 
@@ -313,42 +317,47 @@ await tx.addOperation('vote', {
   permlink: 'some-post-permlink',
   weight: 10000
 })
-const privateKey = PrivateKey.from(
-  '5JRaypasxMx1L97ZUX7YuC5Psb5EAbF821kkAGtBj7xCJFQcbLg'
-)
-tx.sign(privateKey)
-const signature = tx.transaction.signatures[0]
-const digest = tx.digest().digest
-const ok1 = privateKey.createPublic().verify(digest, signature)
+const privateKey = PrivateKey.from('5J...posting-key')
+const { signatures } = tx.sign(privateKey)
+const { digest } = tx.digest()
+
+const ok1 = privateKey.createPublic().verify(digest, signatures[0])
 const ok2 =
-  Signature.from(signature).getPublicKey(digest).toString() ===
-  privateKey.createPublic().toString()
-console.log(ok1, ok2)</code></pre>
+  Signature.from(signatures[0]).getPublicKey(digest).toString() ===
+  privateKey.createPublic().toString()</code></pre>
 <h2>Multi-signature</h2>
 <pre><code>tx.sign([ownerKey, activeKey])
-// or
+// or, one at a time; signatures accumulate
 tx.sign(ownerKey)
 tx.sign(activeKey)</code></pre>
 <h2>Wait for an irreversible block</h2>
 <pre><code>const result = await tx.broadcast(true)
 console.log(result.status)
 // 'within_irreversible_block' | 'expired_irreversible' | 'too_old' | 'unknown'</code></pre>
+<h2>Handle a rejected broadcast</h2>
+<pre><code>import { RPCError } from 'hive-tx'
+
+try {
+  await tx.broadcast()
+} catch (e) {
+  if (e instanceof RPCError) {
+    console.log('Rejected by the chain:', e.message) // e.g. missing required posting authority
+  } else {
+    throw e // every node failed
+  }
+}</code></pre>
 <h2>JSON-RPC</h2>
 <pre><code>import { callRPC } from 'hive-tx'
 
 const accounts = await callRPC('condenser_api.get_accounts', [['hiveio']])
 const props = await callRPC('condenser_api.get_dynamic_global_properties')
 console.log(accounts[0].name, props.head_block_number)</code></pre>
-<p>API method names: <a href="https://developers.hive.io/apidefinitions/">Hive API definitions</a>.</p>
+<p>Method names are in the <a href="https://developers.hive.io/apidefinitions/">Hive API definitions</a>.</p>
 <h2>Quorum</h2>
 <pre><code>import { callWithQuorum } from 'hive-tx'
 
-const accounts = await callWithQuorum(
-  'condenser_api.get_accounts',
-  [['hiveio']],
-  2
-)</code></pre>
-<p>Quorum is JSON equality across nodes. It is not a head-lag check.</p>
+const accounts = await callWithQuorum('condenser_api.get_accounts', [['hiveio']], 2)</code></pre>
+<p>Two nodes must return identical JSON. This guards against a wrong or malicious node; it does not check how far behind a node is.</p>
 <h2>Account history filter</h2>
 <pre><code>import { callRPC, utils } from 'hive-tx'
 
@@ -369,14 +378,13 @@ const history = await callRPC('condenser_api.get_account_history', [
 const balance = await callREST('balance', '/accounts/{account-name}/balances', {
   'account-name': 'alice'
 })</code></pre>
-<p>REST nodes are in <code>config.restNodes</code>. Browse endpoints on a node such as <a href="https://rpc.mahdiyari.info">rpc.mahdiyari.info</a>.</p>
+<p>To browse the endpoints, open a REST node such as <a href="https://rpc.mahdiyari.info">rpc.mahdiyari.info</a>.</p>
 <h2>Encrypt a memo</h2>
 <pre><code>import { Memo, PrivateKey } from 'hive-tx'
 
-const senderMemoKey = PrivateKey.from('5J...sender-memo-key')
-const encrypted = Memo.encode(
-  senderMemoKey,
-  'STM...recipient-memo-public-key',
+const encrypted = await Memo.encodeForAccount(
+  PrivateKey.from('5J...sender-memo-key'),
+  'receiver',
   '#Hello World!'
 )
 await tx.addOperation('transfer', {
@@ -385,63 +393,45 @@ await tx.addOperation('transfer', {
   amount: '0.001 HIVE',
   memo: encrypted
 })</code></pre>
-<p>Text without a leading <code>#</code> is not encrypted.</p>
+<p>Only text that starts with <code>#</code> is encrypted.</p>
 <h2>Decrypt a memo</h2>
-<pre><code>const text = Memo.decode(
-  PrivateKey.from('5J...recipient-memo-key'),
-  encryptedMemo
-)</code></pre>
+<pre><code>const text = Memo.decode(PrivateKey.from('5J...recipient-memo-key'), encryptedMemo)</code></pre>
 <h2>Generate keys</h2>
 <pre><code>import { PrivateKey } from 'hive-tx'
 
 const privateKey = PrivateKey.randomKey()
-const publicKey = privateKey.createPublic()
-console.log(privateKey.inspect())
-console.log(publicKey.toString())</code></pre>
+console.log(privateKey.inspect())               // masked WIF, safe to log
+console.log(privateKey.createPublic().toString())</code></pre>
 <h2>Keys from a master password</h2>
 <pre><code>const owner = PrivateKey.fromLogin('username', 'master-password', 'owner')
 const active = PrivateKey.fromLogin('username', 'master-password', 'active')
 const posting = PrivateKey.fromLogin('username', 'master-password', 'posting')
 const memo = PrivateKey.fromLogin('username', 'master-password', 'memo')</code></pre>
-<p><code>fromLogin</code> is a static method on <code>PrivateKey</code>. Do not call it on a key instance.</p>
 <h2>Validate a username</h2>
 <pre><code>import { utils } from 'hive-tx'
 
 for (const name of ['alice', 'a', 'BadName']) {
   const error = utils.validateUsername(name)
-  console.log(name, error === null ? 'valid' : error)
+  console.log(name, error ?? 'valid')
 }</code></pre>
 <h2>Witness set properties</h2>
-<pre><code>import { utils, Transaction } from 'hive-tx'
+<pre><code>import { utils, Transaction, PrivateKey } from 'hive-tx'
 
 const operation = utils.buildWitnessSetProperties('mywitness', {
-  key: 'STM1111111111111111111111111111111114T1Anm',
-  account_creation_fee: '0.000 HIVE',
+  key: 'STM...current-signing-key',
+  account_creation_fee: '3.000 HIVE',
   account_subsidy_budget: 10000,
   account_subsidy_decay: 330782,
   maximum_block_size: 65536,
-  hbd_interest_rate: 0,
+  hbd_interest_rate: 1500,
   hbd_exchange_rate: { base: '0.250 HBD', quote: '1.000 HIVE' },
   url: 'https://example.com'
 })
 const tx = new Transaction()
-await tx.addOperation(operation[0], operation[1])
-tx.sign(PrivateKey.from('5J...active-key'))
+await tx.addOperation(...operation)
+tx.sign(PrivateKey.from('5J...signing-key'))
 await tx.broadcast()</code></pre>
-<p><code>key</code> is required. It is the current signing public key.</p>
-<h2>Handle RPC errors</h2>
-<pre><code>import { callRPC, RPCError } from 'hive-tx'
-
-try {
-  await callRPC('condenser_api.get_accounts', [['alice']])
-} catch (e) {
-  if (e instanceof RPCError) {
-    console.log(e.code, e.message, e.data)
-  } else {
-    throw e
-  }
-}</code></pre>
-<p><code>RPCError</code> is thrown for Hive JSON-RPC errors. Network failures retry, then throw a normal error.</p>
+<p><code>key</code> is required and must be the witness's current signing public key; the chain checks it. Sign with the matching private signing key.</p>
 <h2>Browser</h2>
 <pre><code>&lt;script type="module"&gt;
   import { PrivateKey } from
@@ -456,56 +446,69 @@ PAGES["transactions"] = (
     "transactions",
     "Transactions",
     "Use",
-    "A Transaction object holds operations, signatures, and expiration data.",
+    "A Transaction holds operations, signatures, and an expiration.",
     """
-<h2>Create a transaction</h2>
+<h2>Create</h2>
 <pre><code>const tx = new Transaction()
 const txLong = new Transaction({ expiration: 120_000 })</code></pre>
-<p>Expiration is in milliseconds. The default is 60000 (1 minute). The maximum is 86400000 (24 hours).</p>
-<p>You can wrap an existing transaction object:</p>
+<p>Expiration is in milliseconds. The default is 60000 (1 minute). The chain rejects anything over 86400000 (24 hours); the library does not check it for you.</p>
+<p>To wrap an existing transaction object, for example one signed elsewhere:</p>
 <pre><code>const tx = new Transaction({ transaction: rawTx })</code></pre>
-<h2>Add an operation</h2>
-<p><code>addOperation</code> is async. The first call gets chain properties and sets <code>ref_block_num</code> and <code>ref_block_prefix</code>.</p>
+<h2>Add operations</h2>
+<p><code>addOperation</code> is async: the first call fetches chain properties to set <code>ref_block_num</code> and <code>ref_block_prefix</code>. Those properties are cached for 2 seconds, so building several transactions in a row costs one request. A transaction can hold many operations.</p>
 <pre><code>await tx.addOperation('transfer', {
   from: 'sender',
   to: 'receiver',
   amount: '1.000 HIVE',
   memo: 'payment'
 })</code></pre>
-<p>You can add more than one operation to the same transaction.</p>
 <h2>Sign</h2>
-<p><code>sign</code> accepts one <code>PrivateKey</code> or an array of keys.</p>
+<p><code>sign</code> takes one <code>PrivateKey</code> or an array, appends the signatures, and returns the transaction. Call <code>addOperation</code> first; signing an empty transaction throws.</p>
 <pre><code>tx.sign(privateKey)
 tx.sign([postingKey, activeKey])</code></pre>
-<p>If there is no transaction, <code>sign</code> throws an error. Call <code>addOperation</code> first.</p>
 <h2>Broadcast</h2>
 <pre><code>const quick = await tx.broadcast()
 const confirmed = await tx.broadcast(true)</code></pre>
 <table>
-  <thead><tr><th>Argument</th><th>Result</th></tr></thead>
+  <thead><tr><th>Argument</th><th>Returns when</th></tr></thead>
   <tbody>
-    <tr><td><code>false</code> (default)</td><td>The function returns after the node accepts the transaction. Status is <code>unknown</code>.</td></tr>
-    <tr><td><code>true</code></td><td>The function waits until the transaction is in an irreversible block, or until the transaction expires.</td></tr>
+    <tr><td><code>false</code> (default)</td><td>A node accepts the transaction. <code>status</code> is <code>unknown</code>.</td></tr>
+    <tr><td><code>true</code></td><td>The transaction is in an irreversible block, or it expired.</td></tr>
   </tbody>
 </table>
-<p>If there is no signature, <code>broadcast</code> throws an error.</p>
-<p>If a retry causes a duplicate transaction error, the library ignores that error.</p>
-<h2>Digest and transaction id</h2>
-<pre><code>const { digest, txId } = tx.digest()</code></pre>
-<p><code>digest</code> is a 32-byte hash. Use the digest to verify a signature. <code>txId</code> is the first 40 hex characters of the SHA-256 hash of the serialized transaction.</p>
-<h2>Add an external signature</h2>
-<p>Use <code>addSignature</code> when an external tool creates the signature. The signature must be a hex string with 130 characters.</p>
-<pre><code>tx.addSignature(hexSignature)</code></pre>
-<h2>Status values</h2>
+<p>Broadcasting an unsigned transaction throws. If a retry hits a duplicate-transaction error, the library ignores it, because the first attempt went through.</p>
+<h2>Errors</h2>
+<p>If the chain rejects the transaction, for example for a missing authority, too little RC, or an invalid operation, <code>broadcast</code> throws <code>RPCError</code> with the node's message. Network failures move on to the next node; when every retry fails, the last network error is thrown.</p>
+<pre><code>import { RPCError } from 'hive-tx'
+
+try {
+  await tx.broadcast()
+} catch (e) {
+  if (e instanceof RPCError) console.log(e.message)
+  else throw e
+}</code></pre>
+<h2>Check status</h2>
+<p><code>checkStatus</code> asks a node what happened to the transaction. <code>broadcast(true)</code> polls it for you.</p>
+<pre><code>const { status } = await tx.checkStatus()</code></pre>
 <table>
   <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
   <tbody>
-    <tr><td><code>unknown</code></td><td>The library did not wait for a block, or the wait ended at expiration.</td></tr>
-    <tr><td><code>within_irreversible_block</code></td><td>The transaction is in an irreversible block.</td></tr>
-    <tr><td><code>expired_irreversible</code></td><td>The transaction expired.</td></tr>
-    <tr><td><code>too_old</code></td><td>The transaction is too old for the node.</td></tr>
+    <tr><td><code>unknown</code></td><td>The node has no record of it. From <code>broadcast()</code>, it means the call did not wait.</td></tr>
+    <tr><td><code>within_mempool</code></td><td>Received, not in a block yet.</td></tr>
+    <tr><td><code>within_reversible_block</code></td><td>In a block that is not irreversible yet.</td></tr>
+    <tr><td><code>within_irreversible_block</code></td><td>In an irreversible block. Final.</td></tr>
+    <tr><td><code>expired_reversible</code></td><td>Expired without being included; not final yet.</td></tr>
+    <tr><td><code>expired_irreversible</code></td><td>Expired without being included. Final.</td></tr>
+    <tr><td><code>too_old</code></td><td>Older than the node tracks.</td></tr>
   </tbody>
 </table>
+<p><code>broadcast(true)</code> only returns <code>within_irreversible_block</code>, <code>expired_irreversible</code>, <code>too_old</code>, or <code>unknown</code> if the wait reaches the expiration.</p>
+<h2>Digest and transaction id</h2>
+<pre><code>const { digest, txId } = tx.digest()</code></pre>
+<p><code>digest</code> is the 32-byte hash that gets signed; use it to verify signatures. <code>txId</code> is the first 40 hex characters of the SHA-256 of the serialized transaction.</p>
+<h2>Add an external signature</h2>
+<p>When a wallet or another tool signs the digest, add its signature as a 130-character hex string:</p>
+<pre><code>tx.addSignature(hexSignature)</code></pre>
 """,
 )
 
@@ -516,7 +519,7 @@ PAGES["keys"] = (
     "PrivateKey, PublicKey, and Signature create Hive keys and verify signatures.",
     """
 <h2>PrivateKey</h2>
-<p>A private key is a secp256k1 secret. The WIF string is the storage format.</p>
+<p>A private key is a secp256k1 secret, stored as a WIF string.</p>
 <pre><code>import { PrivateKey } from 'hive-tx'
 
 const fromWif = PrivateKey.from('5JdeC9P7Pbd1uGdFVEsJ41EkEnADbbHGq6p1BwFxm6txNBsQnsw')
@@ -528,46 +531,45 @@ const posting = PrivateKey.fromLogin('alice', 'master-password', 'posting')</cod
   <tbody>
     <tr><td><code>from</code></td><td>WIF string or 32-byte <code>Uint8Array</code></td><td>PrivateKey</td></tr>
     <tr><td><code>fromString</code></td><td>WIF string</td><td>PrivateKey</td></tr>
-    <tr><td><code>fromSeed</code></td><td>UTF-8 string, hex string, or bytes</td><td>SHA-256 of the seed as a key</td></tr>
+    <tr><td><code>fromSeed</code></td><td>UTF-8 string, hex string, or bytes</td><td>Key from the SHA-256 of the seed</td></tr>
     <tr><td><code>fromLogin</code></td><td>username, password, role</td><td>Hive login key for that role</td></tr>
     <tr><td><code>randomKey</code></td><td>none</td><td>New random key</td></tr>
     <tr><td><code>createPublic</code></td><td>optional prefix</td><td>PublicKey</td></tr>
     <tr><td><code>sign</code></td><td>32-byte hash</td><td>Signature</td></tr>
     <tr><td><code>toString</code></td><td>none</td><td>WIF string</td></tr>
-    <tr><td><code>inspect</code></td><td>none</td><td>Masked WIF string</td></tr>
-    <tr><td><code>getSharedSecret</code></td><td>PublicKey</td><td>64-byte secret for memo encryption</td></tr>
+    <tr><td><code>inspect</code></td><td>none</td><td>Masked WIF, safe to log</td></tr>
+    <tr><td><code>getSharedSecret</code></td><td>PublicKey</td><td>64-byte secret, used for memo encryption</td></tr>
   </tbody>
 </table>
-<p>Roles for <code>fromLogin</code> are <code>owner</code>, <code>active</code>, <code>posting</code>, and <code>memo</code>. The default role is <code>active</code>.</p>
-<p>The seed for <code>fromLogin</code> is <code>username + role + password</code>.</p>
+<p><code>fromLogin</code> roles are <code>owner</code>, <code>active</code> (the default), <code>posting</code>, and <code>memo</code>. The seed is <code>username + role + password</code>, the same as Hive wallets use.</p>
 <h2>PublicKey</h2>
-<p>A Hive public key string starts with the address prefix. The default prefix is <code>STM</code>.</p>
+<p>A public key string starts with the address prefix, <code>STM</code> by default.</p>
 <pre><code>import { PublicKey } from 'hive-tx'
 
 const pub = privateKey.createPublic()
 const fromStr = PublicKey.from('STM8m5UgaFAAYQRuaNejYdS8FVLVp9Ss3K1qAVk5de6F8s3HnVbvA')
 const ok = pub.verify(messageHash, signature)</code></pre>
 <table>
-  <thead><tr><th>Method</th><th>Function</th></tr></thead>
+  <thead><tr><th>Method</th><th>Does</th></tr></thead>
   <tbody>
-    <tr><td><code>from</code> / <code>fromString</code></td><td>Read a public key string.</td></tr>
-    <tr><td><code>verify</code></td><td>Return true if the signature matches the 32-byte hash.</td></tr>
-    <tr><td><code>toString</code> / <code>toJSON</code></td><td>Return the public key string with prefix.</td></tr>
+    <tr><td><code>from</code> / <code>fromString</code></td><td>Parses a public key string.</td></tr>
+    <tr><td><code>verify</code></td><td>Returns true if the signature (object or hex) matches the 32-byte hash.</td></tr>
+    <tr><td><code>toString</code> / <code>toJSON</code></td><td>Returns the key string with its prefix.</td></tr>
   </tbody>
 </table>
 <h2>Signature</h2>
-<p>A compact recoverable signature is a hex string with 130 characters.</p>
+<p>A compact recoverable signature, written as 130 hex characters.</p>
 <pre><code>import { Signature } from 'hive-tx'
 
 const sig = Signature.from(hex)
 const recovered = sig.getPublicKey(messageHash)
 const hexOut = sig.customToString()</code></pre>
-<p><code>getPublicKey</code> needs a 32-byte hash as <code>Uint8Array</code> or a 64-character hex string.</p>
-<p>To recover a Hive Keychain <code>requestSignBuffer</code> proof:</p>
+<p><code>getPublicKey</code> takes the 32-byte hash as a <code>Uint8Array</code> or a 64-character hex string.</p>
+<p>To check a Hive Keychain <code>requestSignBuffer</code> proof:</p>
 <ol class="steps">
-  <li>Create a SHA-256 hash of the UTF-8 message.</li>
-  <li>Remove a leading <code>0x</code> from the signature if it is present.</li>
-  <li>Call <code>Signature.from(hex).getPublicKey(hash).toString()</code>.</li>
+  <li>Hash the UTF-8 message with SHA-256.</li>
+  <li>Strip a leading <code>0x</code> from the signature, if present.</li>
+  <li>Compare <code>Signature.from(hex).getPublicKey(hash).toString()</code> with the account's key.</li>
 </ol>
 """,
 )
@@ -576,35 +578,28 @@ PAGES["memo"] = (
     "memo",
     "Memos",
     "Use",
-    "Memo.encode encrypts a private message. Memo.decode decrypts the message.",
+    "Memo.encode encrypts a private message and Memo.decode decrypts it.",
     """
 <h2>Rules</h2>
 <ul>
-  <li>If the memo text starts with <code>#</code>, the library encrypts the text.</li>
-  <li>If the memo text does not start with <code>#</code>, the library returns the text with no change.</li>
-  <li>Use the sender memo private key to encrypt.</li>
-  <li>Use the recipient memo public key to encrypt.</li>
-  <li>Use the recipient memo private key to decrypt.</li>
+  <li>Only text that starts with <code>#</code> is encrypted; other text is returned unchanged.</li>
+  <li>Encrypt with the sender's memo private key and the recipient's memo public key.</li>
+  <li>Decrypt with either side's memo private key.</li>
 </ul>
 <h2>Encrypt</h2>
 <pre><code>import { Memo, PrivateKey } from 'hive-tx'
 
 const senderMemoKey = PrivateKey.from('5J...sender-memo-key')
-const encrypted = Memo.encode(
-  senderMemoKey,
-  'STM...recipient-memo-public-key',
-  '#Hello'
-)</code></pre>
-<p>Put the encrypted string in a transfer <code>memo</code> field.</p>
-<p>To encrypt by account name, use <code>encodeForAccount</code>. It looks up the recipient's memo public key:</p>
+const encrypted = Memo.encode(senderMemoKey, 'STM...recipient-memo-public-key', '#Hello')</code></pre>
+<p>To encrypt by account name, use <code>encodeForAccount</code>; it looks up the recipient's memo key:</p>
 <pre><code>const encrypted = await Memo.encodeForAccount(senderMemoKey, 'bob', '#Hello')</code></pre>
+<p>Put the result in a transfer's <code>memo</code> field.</p>
 <h2>Decrypt</h2>
 <pre><code>const recipientMemoKey = PrivateKey.from('5J...recipient-memo-key')
-const text = Memo.decode(recipientMemoKey, encryptedMemo)
-// text starts with '#'</code></pre>
+const text = Memo.decode(recipientMemoKey, encryptedMemo) // starts with '#'</code></pre>
 <div class="callout caution">
   <strong>Caution</strong>
-  Encryption uses AES in CBC mode. The memo key is not the posting key. The memo key is not the active key.
+  Memos use AES-CBC with a key shared between the two memo keys. The memo key is separate from the posting and active keys; do not use those to encrypt.
 </div>
 """,
 )
@@ -613,48 +608,42 @@ PAGES["rpc"] = (
     "rpc",
     "RPC and REST calls",
     "Use",
-    "callRPC, callRPCBatch, callREST, and callWithQuorum send requests to Hive nodes.",
+    "callRPC, callRPCBatch, callWithQuorum, and callREST send requests to Hive nodes, with failover.",
     """
 <h2>callRPC</h2>
-<p><code>callRPC</code> sends a JSON-RPC 2.0 request. The function returns the result. The function throws <code>RPCError</code> for a Hive RPC error.</p>
+<p>Sends a JSON-RPC 2.0 request and returns the result. A Hive error throws <code>RPCError</code>.</p>
 <pre><code>import { callRPC } from 'hive-tx'
 
 const accounts = await callRPC('condenser_api.get_accounts', [['alice']])
 const props = await callRPC('condenser_api.get_dynamic_global_properties')</code></pre>
-<p>Parameters:</p>
 <table>
-  <thead><tr><th>Name</th><th>Default</th><th>Function</th></tr></thead>
+  <thead><tr><th>Parameter</th><th>Default</th><th>Meaning</th></tr></thead>
   <tbody>
     <tr><td><code>method</code></td><td>required</td><td>API method name</td></tr>
     <tr><td><code>params</code></td><td><code>[]</code></td><td>Array or object</td></tr>
-    <tr><td><code>timeout</code></td><td><code>config.timeout</code></td><td>Timeout in milliseconds</td></tr>
-    <tr><td><code>retry</code></td><td><code>config.retry</code></td><td>Retry count after a network failure</td></tr>
+    <tr><td><code>timeout</code></td><td><code>config.timeout</code></td><td>Per request, in milliseconds</td></tr>
+    <tr><td><code>retry</code></td><td><code>config.retry</code></td><td>How many other nodes to try after a failure</td></tr>
   </tbody>
 </table>
-<p>If a node does not respond, the library selects the next URL in <code>config.nodes</code>.</p>
-<p>Hive API names are in the Hive developer documentation.</p>
+<p>When a node times out or fails, the call moves to the next URL in <code>config.nodes</code>. A Hive <code>RPCError</code> is not retried, because every node would give the same answer. Method names are in the <a href="https://developers.hive.io/apidefinitions/">Hive API definitions</a>.</p>
 <h2>callRPCBatch</h2>
-<p><code>callRPCBatch</code> calls one method many times in a single JSON-RPC batch request. It takes a list of params, one entry per call, and returns the results in the same order. Failover, <code>timeout</code>, and <code>retry</code> work like <code>callRPC</code>. If any call fails with a Hive RPC error, the function throws <code>RPCError</code>.</p>
+<p>Calls one method many times in a single JSON-RPC batch request. Pass one params entry per call; results come back in the same order. Failover, <code>timeout</code>, and <code>retry</code> work like <code>callRPC</code>. If any call in the batch fails with a Hive error, it throws <code>RPCError</code>.</p>
 <pre><code>import { callRPCBatch } from 'hive-tx'
 
 const blocks = await callRPCBatch('condenser_api.get_block', [[1], [2], [3]])</code></pre>
-<p>Use it to fetch many items with one request instead of many. Keep batches modest, such as 20 to 50 calls; nodes time out on very large responses.</p>
+<p>Keep batches modest, around 20 to 50 calls: nodes time out on very large responses.</p>
 <h2>callWithQuorum</h2>
-<p><code>callWithQuorum</code> sends the same method to more than one node. The function returns a result only if that number of nodes give the same JSON.</p>
+<p>Sends the call to several random nodes and returns only when <code>quorum</code> of them return identical JSON. Use it when a wrong answer from one node would be costly.</p>
 <pre><code>import { callWithQuorum } from 'hive-tx'
 
-const accounts = await callWithQuorum(
-  'condenser_api.get_accounts',
-  [['alice']],
-  2
-)</code></pre>
-<p>The default quorum is 2. The quorum must be less than or equal to <code>config.nodes.length</code>.</p>
+const accounts = await callWithQuorum('condenser_api.get_accounts', [['alice']], 2)</code></pre>
+<p>The default quorum is 2, and it cannot exceed <code>config.nodes.length</code>.</p>
 <div class="callout note">
   <strong>Note</strong>
-  Quorum is JSON equality. Quorum is not a check of head-block lag. Do not change <code>config.nodes</code> during concurrent calls.
+  Quorum compares results; it does not check head-block lag. Nodes a block apart can disagree on fast-changing data.
 </div>
 <h2>callREST</h2>
-<p><code>callREST</code> calls a REST API on <code>config.restNodes</code>. Not all public nodes have REST APIs.</p>
+<p>Calls a REST API on <code>config.restNodes</code>. Not every public node serves REST.</p>
 <pre><code>import { callREST } from 'hive-tx'
 
 const balance = await callREST(
@@ -662,21 +651,60 @@ const balance = await callREST(
   '/accounts/{account-name}/balances',
   { 'account-name': 'alice' }
 )</code></pre>
-<p>API names:</p>
-<ul>
-  <li><code>balance</code></li>
-  <li><code>hafah</code></li>
-  <li><code>hafbe</code></li>
-  <li><code>hivemind</code></li>
-  <li><code>hivesense</code></li>
-  <li><code>reputation</code></li>
-  <li><code>nft-tracker</code></li>
-  <li><code>hafsql</code></li>
-  <li><code>status</code></li>
-</ul>
-<p>A path parameter uses <code>{name}</code> in the path. Other fields become query parameters. TypeScript checks path names for each API.</p>
-<h2>Stream blocks</h2>
-<p><code>streamBlocks</code> yields irreversible blocks in order, with no gaps or duplicates. Hive blocks become irreversible within seconds, so the stream is close to real time.</p>
+<p>APIs: <code>balance</code>, <code>hafah</code>, <code>hafbe</code>, <code>hivemind</code>, <code>hivesense</code>, <code>reputation</code>, <code>nft-tracker</code>, <code>hafsql</code>, and <code>status</code>. TypeScript checks the endpoint, its parameters, and the response for each one.</p>
+<p>Fields named in the path, like <code>{account-name}</code>, fill the path; the rest become query parameters, and arrays repeat the key.</p>
+<table>
+  <thead><tr><th>Parameter</th><th>Default</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>api</code></td><td>required</td><td>One of the API names above</td></tr>
+    <tr><td><code>endpoint</code></td><td>required</td><td>Endpoint path, with <code>{placeholders}</code></td></tr>
+    <tr><td><code>params</code></td><td>none</td><td>Path and query values</td></tr>
+    <tr><td><code>timeout</code></td><td><code>config.timeout</code></td><td>Per request, in milliseconds</td></tr>
+    <tr><td><code>retry</code></td><td><code>config.retry</code></td><td>How many other nodes to try after a failure</td></tr>
+  </tbody>
+</table>
+<p>Network errors, timeouts, and HTTP 5xx move to the next REST node. HTTP 404 throws at once without failover, because it usually means a wrong endpoint or parameter.</p>
+<h2>RPCError</h2>
+<p><code>RPCError</code> has <code>message</code>, <code>code</code>, and optional <code>data</code> from the node.</p>
+<pre><code>import { callRPC, RPCError } from 'hive-tx'
+
+try {
+  await callRPC('condenser_api.get_accounts', [['alice']])
+} catch (e) {
+  if (e instanceof RPCError) console.log(e.code, e.message, e.data)
+  else throw e // every node failed
+}</code></pre>
+<p>To follow new blocks and operations, see <a href="streams.html">Streams</a>.</p>
+""",
+)
+
+PAGES["streams"] = (
+    "streams",
+    "Streams",
+    "Use",
+    "streamBlocks, streamBlockNumbers, and streamOperations follow the chain's irreversible blocks, in order, with no gaps or duplicates.",
+    """
+<p>Streams read only irreversible blocks, so you never see a block that later disappears in a fork. Hive blocks become irreversible within seconds, so streams run close to real time.</p>
+<p>All three are async generators. They catch up on past blocks in batches of 20, then poll every second. <code>break</code> stops a stream. If every node fails, the stream throws.</p>
+<table>
+  <thead><tr><th>Option</th><th>Default</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>from</code></td><td>last irreversible block</td><td>First block to yield</td></tr>
+    <tr><td><code>to</code></td><td>none</td><td>Last block to yield; the stream ends after it</td></tr>
+    <tr><td><code>only_virtual</code></td><td><code>false</code></td><td><code>streamOperations</code> only: yield just virtual operations</td></tr>
+  </tbody>
+</table>
+<h2>streamOperations</h2>
+<p>Yields every operation in chain order, virtual operations included, like <code>get_ops_in_block</code>. Virtual operations are the ones the chain creates itself, such as rewards, order fills, and interest.</p>
+<pre><code>import { streamOperations } from 'hive-tx'
+
+for await (const { block, trx_id, op } of streamOperations()) {
+  if (op[0] === 'transfer') console.log(block, trx_id, op[1].from, op[1].amount)
+  if (op[0] === 'producer_reward') console.log(block, op[1].producer)
+}</code></pre>
+<p>Each item has <code>block</code>, <code>trx_id</code>, <code>trx_in_block</code>, <code>op_in_trx</code>, <code>virtual_op</code>, <code>timestamp</code>, and <code>op</code>.</p>
+<h2>streamBlocks</h2>
+<p>Yields whole blocks with their transactions.</p>
 <pre><code>import { streamBlocks } from 'hive-tx'
 
 for await (const block of streamBlocks()) {
@@ -688,32 +716,20 @@ for await (const block of streamBlocks()) {
     }
   }
 }</code></pre>
-<table>
-  <thead><tr><th>Option</th><th>Default</th><th>Effect</th></tr></thead>
-  <tbody>
-    <tr><td><code>from</code></td><td>last irreversible block</td><td>First block to yield</td></tr>
-    <tr><td><code>to</code></td><td>none</td><td>Last block to yield; the stream ends after it</td></tr>
-  </tbody>
-</table>
-<p>Past blocks are fetched 20 per request. Once caught up, the stream polls every second. <code>break</code> stops the stream. If every node fails, the stream throws. Save <code>block.block_num</code> and resume with <code>from: savedNum + 1</code>.</p>
-<h2>Stream block numbers</h2>
-<p><code>streamBlockNumbers</code> yields irreversible block numbers the same way, without fetching the blocks. It takes <code>from</code> and <code>to</code> like <code>streamBlocks</code>.</p>
+<h2>streamBlockNumbers</h2>
+<p>Yields block numbers only, without fetching the blocks. Use it to drive your own fetching.</p>
 <pre><code>import { streamBlockNumbers } from 'hive-tx'
 
 for await (const num of streamBlockNumbers()) {
   console.log(num)
 }</code></pre>
-<h2>Stream operations</h2>
-<p><code>streamOperations</code> yields every operation of irreversible blocks in chain order, virtual operations included, like <code>get_ops_in_block</code>. Virtual operations are created by the chain, such as rewards, order fills, and interest. Pass <code>only_virtual: true</code> to get only those.</p>
-<pre><code>import { streamOperations } from 'hive-tx'
-
-for await (const { block, trx_id, op } of streamOperations()) {
-  if (op[0] === 'transfer') console.log(block, trx_id, op[1].from, op[1].amount)
-  if (op[0] === 'producer_reward') console.log(block, op[1].producer)
+<h2>Resume after a restart</h2>
+<p>Save the number of the last block you fully handled, then restart with <code>from</code> set to the next one:</p>
+<pre><code>for await (const block of streamBlocks({ from: savedBlockNum + 1 })) {
+  await handle(block)
+  savedBlockNum = block.block_num
 }</code></pre>
-<p>It takes <code>from</code> and <code>to</code> like <code>streamBlocks</code>, plus <code>only_virtual</code> (default <code>false</code>). Each item has <code>block</code>, <code>trx_id</code>, <code>trx_in_block</code>, <code>op_in_trx</code>, <code>virtual_op</code>, <code>timestamp</code>, and <code>op</code>. To resume, pass <code>from</code> as the last block you fully handled plus one.</p>
-<h2>RPCError</h2>
-<p><code>RPCError</code> has <code>message</code>, <code>code</code>, and optional <code>data</code>.</p>
+<p>Read a past range by setting both ends: <code>streamBlocks({ from: 1000, to: 1999 })</code>.</p>
 """,
 )
 
@@ -721,46 +737,32 @@ PAGES["config"] = (
     "config",
     "Configuration",
     "Use",
-    "The config object sets nodes, timeouts, chain id, and the address prefix.",
+    "The config object sets the nodes, timeout, retries, chain id, and address prefix.",
     """
 <pre><code>import { config } from 'hive-tx'
 
-config.nodes = [
-  'https://api.hive.blog',
-  'https://api.deathwing.me',
-  'https://api.openhive.network',
-  'https://rpc.mahdiyari.info',
-  'https://techcoderx.com',
-  'https://hiveapi.actifit.io',
-  'https://api.c0ff33a.uk'
-]
-config.restNodes = [
-  'https://api.hive.blog',
-  'https://rpc.mahdiyari.info',
-  'https://techcoderx.com',
-  'https://hiveapi.actifit.io',
-  'https://api.c0ff33a.uk'
-]
-config.timeout = 10_000
-config.retry = 8
-config.address_prefix = 'STM'
-config.chain_id = 'beeab0de00000000000000000000000000000000000000000000000000000000'</code></pre>
+console.log(config.nodes)  // the default public JSON-RPC nodes
+
+config.nodes = ['https://api.hive.blog', 'https://api.deathwing.me']
+config.restNodes = ['https://rpc.mahdiyari.info']
+config.timeout = 5_000
+config.retry = 3</code></pre>
 <table>
-  <thead><tr><th>Field</th><th>Unit</th><th>Default</th></tr></thead>
+  <thead><tr><th>Field</th><th>Type</th><th>Default</th></tr></thead>
   <tbody>
-    <tr><td><code>nodes</code></td><td>URL array</td><td>Public JSON-RPC nodes</td></tr>
-    <tr><td><code>restNodes</code></td><td>URL array with no trailing slash</td><td>Public REST nodes</td></tr>
-    <tr><td><code>timeout</code></td><td>milliseconds</td><td>10000</td></tr>
-    <tr><td><code>retry</code></td><td>count</td><td>8</td></tr>
+    <tr><td><code>nodes</code></td><td>URL array</td><td>Public JSON-RPC nodes, maintained with each release</td></tr>
+    <tr><td><code>restNodes</code></td><td>URL array, no trailing slash</td><td>Public REST nodes, maintained with each release</td></tr>
+    <tr><td><code>timeout</code></td><td>milliseconds</td><td><code>10000</code></td></tr>
+    <tr><td><code>retry</code></td><td>count</td><td><code>8</code></td></tr>
     <tr><td><code>address_prefix</code></td><td>string</td><td><code>STM</code></td></tr>
-    <tr><td><code>chain_id</code></td><td>64 hex characters</td><td>Hive mainnet chain id</td></tr>
+    <tr><td><code>chain_id</code></td><td>64 hex characters</td><td>Hive mainnet: <code>beeab0de00…00</code></td></tr>
   </tbody>
 </table>
+<p>Calls go to the current node and move down the list on failure, wrapping around at the end; they stay on the node that worked. Put your preferred node first. For a testnet, set <code>chain_id</code>, <code>address_prefix</code>, and <code>nodes</code> to the testnet's values; changes apply to the next call and signature.</p>
 <div class="callout caution">
   <strong>Caution</strong>
-  <code>config</code> is global for the process. Concurrent tasks that change <code>config.nodes</code> can select the wrong node. Set the node list once at start.
+  <code>config</code> is global to the process. Set it once at startup; changing <code>config.nodes</code> while calls are in flight can send them to the wrong node.
 </div>
-<p>Timeout and expiration values are in milliseconds in v7. In v6 those values were in seconds.</p>
 """,
 )
 
@@ -768,44 +770,44 @@ PAGES["utils"] = (
     "utils",
     "Utilities",
     "Use",
-    "The utils object has stake and mana math, vote values, reputation, permlinks, name validation, history filters, and witness properties.",
+    "The utils object has stake and mana math, vote values, reputation, social operations, account keys, permlinks, name validation, history filters, and witness properties.",
     """
-<p>The stake, mana, and vote helpers are async and fetch what they need: account, global properties, reward fund, and price. Fetched data is cached for 2 seconds and shared by concurrent calls, so calling several helpers in a row costs one request per kind of data. Results are JavaScript numbers, accurate for display and estimates.</p>
+<p>The stake, mana, and vote helpers are async and fetch what they need: the account, global properties, reward fund, and price. That data is cached for 2 seconds and shared between concurrent calls, so several helpers in a row cost one request per kind of data. Results are JavaScript numbers, fine for display and estimates.</p>
 <h2>Voting power and mana</h2>
 <pre><code>import { utils } from 'hive-tx'
 
-await utils.getVotingMana('alice')      // { current, max, percentage }
+await utils.getVotingMana('alice')      // { current, max, percentage, fullAt }
 await utils.getDownvoteMana('alice')
 await utils.getRCMana('alice')
 await utils.getEffectiveVests('alice')  // own + received - delegated - this week's power down</code></pre>
-<p>Instead of a name, you can pass an account object you already have, from <code>condenser_api.get_accounts</code> or <code>database_api.find_accounts</code> (for <code>getRCMana</code>, from <code>rc_api.find_rc_accounts</code>). That skips the request.</p>
-<p>Mana is regenerated to now; pass a time in milliseconds as the last argument to compute it at another time. Mana refills from 0 to 100% in 5 days. Downvote mana is 25% of voting mana. <code>fullAt</code> is a <code>Date</code> for when the mana will be full.</p>
+<p>Instead of a name, you can pass an account object you already have, from <code>condenser_api.get_accounts</code> or <code>database_api.find_accounts</code> (or from <code>rc_api.find_rc_accounts</code> for <code>getRCMana</code>). That skips the request.</p>
+<p>Mana is computed for now; pass a time in milliseconds as the last argument to compute it for another moment. Mana refills from 0 to 100% in 5 days, and downvote mana is 25% of voting mana. <code>fullAt</code> is the <code>Date</code> the mana will be full.</p>
 <h2>Hive Power</h2>
-<pre><code>await utils.vestsToHP('1000.000000 VESTS')  // number of HIVE
-await utils.hpToVests(100)                  // number of VESTS
+<pre><code>await utils.vestsToHP('1000.000000 VESTS')  // HIVE
+await utils.hpToVests(100)                  // VESTS
 utils.parseAsset('1.000 HIVE')              // { amount: 1, symbol: 'HIVE' }</code></pre>
 <p><code>parseAsset</code> also reads the <code>{ amount, precision, nai }</code> format of <code>database_api</code>.</p>
 <h2>Prices and interest</h2>
 <pre><code>await utils.hiveToHbd(10)          // HBD, at the witnesses' median price
 await utils.hbdToHive('10.000 HBD')
-await utils.getHpApr()             // yearly HIVE Power interest, percent
+await utils.getHpApr()             // yearly Hive Power interest, percent
 await utils.getHbdApr()            // yearly interest on HBD in savings, percent</code></pre>
 <h2>Account value</h2>
 <pre><code>await utils.estimateAccountValue('alice')  // HBD</code></pre>
-<p>Counts liquid and savings HIVE and HBD, own HIVE Power (including delegated out), and funds in open market orders, at the median price.</p>
+<p>Counts liquid and savings HIVE and HBD, own Hive Power (including what is delegated out), and funds in open market orders, at the median price.</p>
 <h2>Vote value</h2>
 <pre><code>await utils.getVoteValue('alice')         // HBD, 100% vote
 await utils.getVoteValue('alice', 5000)   // 50% vote
 await utils.getVoteRShares('alice')       // rshares
-await utils.rsharesToHBD(rshares)         // HBD of any rshares</code></pre>
-<p>Weight is -10000 to 10000. Since HF28, vote strength depends on stake and weight only. Current mana limits how many votes an account can cast, not how strong each vote is. The value combines author and curation rewards.</p>
+await utils.rsharesToHBD(rshares)         // HBD for any rshares</code></pre>
+<p>Weight runs from -10000 to 10000. Since HF28, a vote's strength depends only on stake and weight; current mana limits how many votes an account can cast, not how strong each one is. The value includes both author and curation rewards.</p>
 <h2>Reputation</h2>
-<pre><code>utils.formatReputation('225722985673795')  // 73.18</code></pre>
-<p>Converts raw reputation, as returned by <code>condenser_api.get_account_reputations</code>, to the usual score. Use <code>Math.floor</code> for the whole number most frontends show.</p>
+<pre><code>utils.formatReputation('225722985673795')  // 73.18…</code></pre>
+<p>Converts raw reputation, as returned by <code>condenser_api.get_account_reputations</code>, to the familiar score. Use <code>Math.floor</code> for the whole number most frontends show.</p>
 <h2>createPermlink</h2>
 <pre><code>utils.createPermlink('Hello World!')  // 'hello-world-3f9a1c0b7e2d'
 utils.createPermlink()                // '3f9a1c0b7e2d', for replies</code></pre>
-<p>Makes a valid permlink from a title, with a random suffix so titles can repeat.</p>
+<p>Makes a valid permlink from a title, with a random suffix so the same title can be used twice.</p>
 <h2>Social operations</h2>
 <p>These build the <code>custom_json</code> operations that Hivemind reads. Sign them with the posting key.</p>
 <pre><code>const tx = new Transaction()
@@ -815,7 +817,7 @@ await tx.addOperation(...utils.follow('alice', 'bob'))
 //       followBlacklist, unfollowBlacklist, followMuted, unfollowMuted: use another account's lists
 //       reblog(account, author, permlink)
 //       subscribe, unsubscribe(account, 'hive-123456')</code></pre>
-<p>Unfollow clears a follow or a mute; removing a blacklist entry needs <code>unblacklist</code>.</p>
+<p><code>unfollow</code> clears a follow or a mute; removing a blacklist entry needs <code>unblacklist</code>.</p>
 <h2>Account keys</h2>
 <pre><code>const password = utils.createPassword()  // 'P5...', show it to the user once
 const { privateKeys, owner, active, posting, memo_key } = utils.generateKeys('newuser', password)
@@ -833,17 +835,13 @@ await tx.addOperation('create_claimed_account', {
 
 utils.isValidWif('5J...')         // true or false
 utils.isValidPublicKey('STM...')  // checks prefix, checksum, and curve point</code></pre>
-<p><code>generateKeys</code> derives keys the same way Hive wallets do, so the user can log in with the password. <code>privateKeys</code> has the owner, active, posting, and memo keys.</p>
+<p><code>generateKeys</code> derives keys the way Hive wallets do, so the user can log in with the password. <code>privateKeys</code> holds the owner, active, posting, and memo keys.</p>
 <h2>validateUsername</h2>
-<p>The function returns <code>null</code> if the name is valid. The function returns an error string if the name is not valid.</p>
-<pre><code>import { utils } from 'hive-tx'
-
-const error = utils.validateUsername('alice')
-if (error) {
-  console.log(error)
-}</code></pre>
+<p>Returns <code>null</code> for a valid name, or a string that explains what is wrong.</p>
+<pre><code>const error = utils.validateUsername('alice')
+if (error) console.log(error)</code></pre>
 <h2>makeBitMaskFilter</h2>
-<p>Use the filter with <code>condenser_api.get_account_history</code>.</p>
+<p>Builds the operation filter for <code>condenser_api.get_account_history</code>.</p>
 <pre><code>const filter = utils.makeBitMaskFilter([
   utils.operations.transfer,
   utils.operations.vote,
@@ -855,18 +853,18 @@ const history = await callRPC('condenser_api.get_account_history', [
   100,
   ...filter
 ])</code></pre>
-<p><code>utils.operations</code> maps operation names to numeric ids. Example: <code>vote</code> is 0. <code>transfer</code> is 2.</p>
+<p><code>utils.operations</code> maps operation names to their numeric ids, for example <code>vote</code> is 0 and <code>transfer</code> is 2.</p>
 <h2>buildWitnessSetProperties</h2>
-<p>This helper is required for <code>witness_set_properties</code>. The helper serializes property values to hex.</p>
+<p>Builds a <code>witness_set_properties</code> operation, serializing each property to hex as the chain requires.</p>
 <pre><code>const operation = utils.buildWitnessSetProperties('mywitness', {
-  key: 'STM1111111111111111111111111111111114T1Anm',
-  account_creation_fee: '0.000 HIVE',
+  key: 'STM...current-signing-key',
+  account_creation_fee: '3.000 HIVE',
   maximum_block_size: 65536,
   url: 'https://example.com'
 })
 const tx = new Transaction()
-await tx.addOperation(operation[0], operation[1])</code></pre>
-<p>The <code>key</code> field is required. The field is the current signing public key.</p>
+await tx.addOperation(...operation)</code></pre>
+<p><code>key</code> is required and must be the witness's current signing public key. Sign with the matching private key.</p>
 """,
 )
 
@@ -874,31 +872,31 @@ PAGES["environments"] = (
     "environments",
     "Environments",
     "Reference",
-    "hive-tx supports Node.js, browsers, workers, and serverless runtimes.",
+    "hive-tx runs in Node.js, browsers, workers, and serverless runtimes.",
     """
 <h2>Module formats</h2>
-<p>The package type is <code>module</code>. The package also ships CommonJS.</p>
+<p>The package is ESM and also ships CommonJS:</p>
 <ul>
   <li>ESM: <code>import { PrivateKey } from 'hive-tx'</code></li>
   <li>CommonJS: <code>const { PrivateKey } = require('hive-tx')</code></li>
 </ul>
-<p>Use version 7.2.1 or later. Version 7.2.0 CommonJS throws an error on key encoding.</p>
+<p>Use 7.2.1 or later with CommonJS: the 7.2.0 CommonJS build is broken.</p>
 <h2>Node.js</h2>
-<p>The engine field is <code>node &gt;= 20</code>. The library uses <code>fetch</code> and <code>AbortSignal.timeout</code>.</p>
+<p>Node.js 20 or later. The library uses the built-in <code>fetch</code> and <code>AbortSignal.timeout</code>.</p>
 <h2>Browser and CDN</h2>
-<p>Load <code>dist/index.mjs</code>. The file has no extra chunk. Crypto code is in the file.</p>
+<p>Load <code>dist/index.mjs</code>. It is a single file with the crypto code inside, so there are no extra chunks to fetch.</p>
 <h2>Serverless</h2>
-<p>The build has no nested runtime packages. A Lambda or a Worker can load the file without <code>bs58</code> or <code>@noble/*</code> in <code>node_modules</code>.</p>
-<p>Do not change <code>config.nodes</code> in each concurrent invocation if those invocations share a process.</p>
+<p>The build has no runtime dependencies, so a Lambda or a Worker loads it without <code>bs58</code> or <code>@noble/*</code> in <code>node_modules</code>.</p>
+<p>Invocations that share a process share <code>config</code>; do not change <code>config.nodes</code> per invocation.</p>
 <h2>Tests</h2>
-<p>From 7.2.1 the published files are self-contained. Jest 30 can load hive-tx in the Node environment:</p>
+<p>Jest 30 loads hive-tx in the Node environment:</p>
 <pre><code>const { PrivateKey } = require('hive-tx')
 
 test('derives a posting key', () => {
   const pub = PrivateKey.fromLogin('alice', 'x', 'posting').createPublic().toString()
   expect(pub.startsWith('STM')).toBe(true)
 })</code></pre>
-<p>ESM Jest also works with <code>NODE_OPTIONS=--experimental-vm-modules</code> and a <code>.mjs</code> test file. Version 7.2.0 CommonJS fails in Jest because of a <code>bs58</code> interop bug. Use 7.2.1 or later.</p>
+<p>ESM Jest works too, with <code>NODE_OPTIONS=--experimental-vm-modules</code> and a <code>.mjs</code> test file.</p>
 """,
 )
 
@@ -912,12 +910,12 @@ PAGES["migrate"] = (
   <thead><tr><th>v6</th><th>v7</th></tr></thead>
   <tbody>
     <tr><td><code>tx.create([[name, body]])</code></td><td><code>await tx.addOperation(name, body)</code></td></tr>
-    <tr><td><code>call()</code></td><td><code>callRPC()</code> returns the result and throws <code>RPCError</code></td></tr>
+    <tr><td><code>call()</code></td><td><code>callRPC()</code>, which returns the result and throws <code>RPCError</code></td></tr>
     <tr><td><code>broadcast(timeout, retry)</code></td><td><code>broadcast(checkStatus)</code></td></tr>
-    <tr><td>Timeout in seconds</td><td>Timeout in milliseconds</td></tr>
+    <tr><td>Timeouts in seconds</td><td>Timeouts and expiration in milliseconds</td></tr>
     <tr><td><code>new Transaction(tx)</code></td><td><code>new Transaction({ transaction, expiration })</code></td></tr>
     <tr><td><code>Transaction.signedTransaction</code></td><td><code>Transaction.transaction</code></td></tr>
-    <tr><td><code>config.node</code> string</td><td><code>config.nodes</code> array</td></tr>
+    <tr><td><code>config.node</code> (string)</td><td><code>config.nodes</code> (array)</td></tr>
     <tr><td><code>config.healthcheckInterval</code></td><td>Removed</td></tr>
   </tbody>
 </table>
@@ -934,7 +932,7 @@ await tx.addOperation('vote', {
   permlink: 'post',
   weight: 10000
 })</code></pre>
-<h2>API call</h2>
+<h2>Call an API</h2>
 <pre><code>// v6
 const result = await call('condenser_api.get_accounts', [['alice']])
 const accounts = result.result
@@ -956,7 +954,7 @@ PAGES["reference"] = (
     "reference",
     "API reference",
     "Reference",
-    "This page lists public exports. TypeScript files in dist give full types.",
+    "Every public export and its signature. The type files in dist have the full types.",
     """
 <h2>Exports</h2>
 <pre><code>import {
@@ -971,8 +969,21 @@ PAGES["reference"] = (
   callWithQuorum,
   RPCError,
   streamBlocks,
+  streamBlockNumbers,
+  streamOperations,
   config,
   utils
+} from 'hive-tx'
+
+import type {
+  Operation,
+  OperationName,
+  OperationBody,
+  TransactionType,
+  BroadcastResult,
+  TransactionStatus,
+  Block,
+  AppliedOperation
 } from 'hive-tx'</code></pre>
 <h2>Transaction</h2>
 <table>
@@ -982,73 +993,146 @@ PAGES["reference"] = (
     <tr><td><code>addOperation(name, body)</code></td><td><code>Promise&lt;void&gt;</code></td></tr>
     <tr><td><code>sign(keys)</code></td><td><code>PrivateKey | PrivateKey[]</code> → <code>TransactionType</code></td></tr>
     <tr><td><code>broadcast(checkStatus?)</code></td><td><code>Promise&lt;BroadcastResult&gt;</code></td></tr>
-    <tr><td><code>digest()</code></td><td><code>{ digest: Uint8Array, txId: string }</code></td></tr>
-    <tr><td><code>addSignature(hex)</code></td><td>130-character hex string</td></tr>
     <tr><td><code>checkStatus()</code></td><td><code>Promise&lt;TransactionStatus&gt;</code></td></tr>
+    <tr><td><code>digest()</code></td><td><code>{ digest: Uint8Array, txId: string }</code></td></tr>
+    <tr><td><code>addSignature(hex)</code></td><td>130-character hex → <code>TransactionType</code></td></tr>
     <tr><td><code>transaction</code></td><td><code>TransactionType | undefined</code></td></tr>
     <tr><td><code>expiration</code></td><td>milliseconds, default 60000</td></tr>
   </tbody>
 </table>
-<h2>BroadcastResult</h2>
-<pre><code>{
+<pre><code>BroadcastResult = {
   tx_id: string
   status: 'unknown' | 'within_irreversible_block' | 'expired_irreversible' | 'too_old'
+}
+TransactionStatus = {
+  status: 'unknown' | 'within_mempool' | 'within_reversible_block' | 'within_irreversible_block'
+    | 'expired_reversible' | 'expired_irreversible' | 'too_old'
 }</code></pre>
-<h2>callRPC</h2>
-<p><code>callRPC(method, params?, timeout?, retry?): Promise&lt;T&gt;</code></p>
-<h2>callRPCBatch</h2>
-<p><code>callRPCBatch(method, paramsList, timeout?, retry?): Promise&lt;T[]&gt;</code></p>
-<h2>callWithQuorum</h2>
-<p><code>callWithQuorum(method, params?, quorum?): Promise&lt;T&gt;</code></p>
-<h2>callREST</h2>
-<p><code>callREST(api, endpoint, params?, timeout?, retry?): Promise&lt;...&gt;</code></p>
-<h2>streamBlocks</h2>
-<p><code>streamBlocks({ from?, to? }): AsyncGenerator&lt;Block&gt;</code></p>
-<h2>streamBlockNumbers</h2>
-<p><code>streamBlockNumbers({ from?, to? }): AsyncGenerator&lt;number&gt;</code></p>
-<h2>streamOperations</h2>
-<p><code>streamOperations({ from?, to?, only_virtual? }): AsyncGenerator&lt;AppliedOperation&gt;</code></p>
+<h2>PrivateKey</h2>
+<table>
+  <thead><tr><th>Member</th><th>Type</th></tr></thead>
+  <tbody>
+    <tr><td><code>PrivateKey.from(value)</code></td><td><code>string | Uint8Array</code> → <code>PrivateKey</code></td></tr>
+    <tr><td><code>PrivateKey.fromString(wif)</code></td><td><code>PrivateKey</code></td></tr>
+    <tr><td><code>PrivateKey.fromSeed(seed)</code></td><td><code>string | Uint8Array</code> → <code>PrivateKey</code></td></tr>
+    <tr><td><code>PrivateKey.fromLogin(username, password, role?)</code></td><td>role: <code>'owner' | 'active' | 'posting' | 'memo'</code>, default <code>'active'</code></td></tr>
+    <tr><td><code>PrivateKey.randomKey()</code></td><td><code>PrivateKey</code></td></tr>
+    <tr><td><code>sign(hash)</code></td><td><code>Uint8Array</code> → <code>Signature</code></td></tr>
+    <tr><td><code>createPublic(prefix?)</code></td><td><code>PublicKey</code></td></tr>
+    <tr><td><code>getSharedSecret(publicKey)</code></td><td><code>Uint8Array</code> (64 bytes)</td></tr>
+    <tr><td><code>toString()</code> / <code>inspect()</code></td><td>WIF / masked WIF</td></tr>
+  </tbody>
+</table>
+<h2>PublicKey</h2>
+<table>
+  <thead><tr><th>Member</th><th>Type</th></tr></thead>
+  <tbody>
+    <tr><td><code>PublicKey.from(value)</code></td><td><code>string | PublicKey</code> → <code>PublicKey</code></td></tr>
+    <tr><td><code>PublicKey.fromString(key)</code></td><td><code>PublicKey</code></td></tr>
+    <tr><td><code>verify(hash, signature)</code></td><td><code>Uint8Array, Signature | string</code> → <code>boolean</code></td></tr>
+    <tr><td><code>toString()</code> / <code>toJSON()</code></td><td>Key string with prefix</td></tr>
+  </tbody>
+</table>
+<h2>Signature</h2>
+<table>
+  <thead><tr><th>Member</th><th>Type</th></tr></thead>
+  <tbody>
+    <tr><td><code>Signature.from(hex)</code></td><td><code>Signature</code></td></tr>
+    <tr><td><code>getPublicKey(hash)</code></td><td><code>Uint8Array | string</code> → <code>PublicKey</code></td></tr>
+    <tr><td><code>customToString()</code></td><td>130-character hex</td></tr>
+    <tr><td><code>toBuffer()</code></td><td><code>Uint8Array</code></td></tr>
+  </tbody>
+</table>
 <h2>Memo</h2>
-<p><code>Memo.encode(privateKey, publicKey, memo): string</code></p>
-<p><code>Memo.decode(privateKey, memo): string</code></p>
-<p><code>Memo.encodeForAccount(privateKey, account, memo): Promise&lt;string&gt;</code></p>
+<pre><code>Memo.encode(privateKey, publicKey, memo): string
+Memo.decode(privateKey, memo): string
+Memo.encodeForAccount(privateKey, account, memo): Promise&lt;string&gt;</code></pre>
+<h2>Calls</h2>
+<pre><code>callRPC(method, params?, timeout?, retry?): Promise&lt;T&gt;
+callRPCBatch(method, paramsList, timeout?, retry?): Promise&lt;T[]&gt;
+callWithQuorum(method, params?, quorum?): Promise&lt;T&gt;
+callREST(api, endpoint, params?, timeout?, retry?): Promise&lt;typed response&gt;</code></pre>
+<p><code>RPCError</code> extends <code>Error</code> with <code>code: number</code> and <code>data?: any</code>.</p>
+<h2>Streams</h2>
+<pre><code>streamBlocks({ from?, to? }): AsyncGenerator&lt;Block&gt;
+streamBlockNumbers({ from?, to? }): AsyncGenerator&lt;number&gt;
+streamOperations({ from?, to?, only_virtual? }): AsyncGenerator&lt;AppliedOperation&gt;</code></pre>
+<h2>config</h2>
+<pre><code>{
+  nodes: string[]
+  restNodes: string[]
+  chain_id: string
+  address_prefix: string
+  timeout: number  // ms
+  retry: number
+}</code></pre>
+<h2>utils</h2>
+<p>Async helpers take an account name or an account object you already fetched.</p>
+<pre><code>// Stake and price
+parseAsset(asset): { amount: number, symbol: string }
+vestsToHP(vests): Promise&lt;number&gt;
+hpToVests(hp): Promise&lt;number&gt;
+hiveToHbd(hive): Promise&lt;number&gt;
+hbdToHive(hbd): Promise&lt;number&gt;
+getEffectiveVests(account): Promise&lt;number&gt;
+
+// Mana and votes
+getVotingMana(account, now?): Promise&lt;Manabar&gt;
+getDownvoteMana(account, now?): Promise&lt;Manabar&gt;
+getRCMana(account, now?): Promise&lt;Manabar&gt;
+getVoteRShares(account, weight?): Promise&lt;number&gt;
+getVoteValue(account, weight?): Promise&lt;number&gt;
+rsharesToHBD(rshares): Promise&lt;number&gt;
+// Manabar = { current: number, max: number, percentage: number, fullAt: Date }
+
+// Yield, value, reputation
+getHpApr(): Promise&lt;number&gt;
+getHbdApr(): Promise&lt;number&gt;
+estimateAccountValue(account): Promise&lt;number&gt;
+formatReputation(raw): number
+
+// Keys
+createPassword(): string
+generateKeys(username, password): { privateKeys, publicKeys, owner, active, posting, memo_key }
+isValidWif(wif): boolean
+isValidPublicKey(key): boolean
+
+// Social: each returns ['custom_json', body]
+follow(follower, following)       unfollow(follower, following)
+mute(follower, following)         unmute(follower, following)
+blacklist(follower, following)    unblacklist(follower, following)
+followBlacklist(follower, following)  unfollowBlacklist(follower, following)
+followMuted(follower, following)      unfollowMuted(follower, following)
+reblog(account, author, permlink)
+subscribe(account, community)     unsubscribe(account, community)
+
+// Other
+createPermlink(title?): string
+validateUsername(name): string | null
+operations: Record&lt;string, number&gt;
+makeBitMaskFilter(operationIds): filter arguments for get_account_history
+buildWitnessSetProperties(owner, props): ['witness_set_properties', body]</code></pre>
 <h2>Operation names</h2>
-<p>TypeScript accepts Hive operation names as the first argument of <code>addOperation</code>. The body type matches the name. Common names:</p>
+<p><code>addOperation</code> accepts every Hive operation name, and TypeScript checks the body against it. Common ones:</p>
 <ul>
   <li><code>vote</code>, <code>comment</code>, <code>delete_comment</code>, <code>comment_options</code></li>
-  <li><code>transfer</code>, <code>transfer_to_vesting</code>, <code>withdraw_vesting</code></li>
+  <li><code>transfer</code>, <code>transfer_to_vesting</code>, <code>withdraw_vesting</code>, <code>recurrent_transfer</code></li>
   <li><code>custom_json</code>, <code>custom</code></li>
   <li><code>delegate_vesting_shares</code>, <code>claim_reward_balance</code></li>
-  <li><code>account_update</code>, <code>account_update2</code>, <code>account_create</code></li>
-  <li><code>account_witness_vote</code>, <code>account_witness_proxy</code></li>
-  <li><code>recurrent_transfer</code>, <code>witness_update</code>, <code>witness_set_properties</code></li>
+  <li><code>account_update</code>, <code>account_update2</code>, <code>account_create</code>, <code>create_claimed_account</code></li>
+  <li><code>account_witness_vote</code>, <code>account_witness_proxy</code>, <code>witness_update</code>, <code>witness_set_properties</code></li>
 </ul>
-<p>The full list is in <code>src/types.ts</code>.</p>
+<p>The full list is the <code>Operation</code> type in <code>dist/index.d.mts</code>, or <a href="https://github.com/mahdiyari/hive-tx/blob/master/src/types.ts">src/types.ts</a> on GitHub.</p>
 <h2>Support</h2>
-<p>Use the Hive Discord server. The channel is <code>#dev-chat</code>.</p>
+<p>Ask in <code>#dev-chat</code> on the <a href="https://myhive.li/discord">Hive Discord server</a>.</p>
 """,
 )
 
 
 def main() -> None:
-    files = {
-        "index.html": PAGES["index"],
-        "install.html": PAGES["install"],
-        "start.html": PAGES["start"],
-        "examples.html": PAGES["examples"],
-        "transactions.html": PAGES["transactions"],
-        "keys.html": PAGES["keys"],
-        "memo.html": PAGES["memo"],
-        "rpc.html": PAGES["rpc"],
-        "config.html": PAGES["config"],
-        "utils.html": PAGES["utils"],
-        "environments.html": PAGES["environments"],
-        "migrate.html": PAGES["migrate"],
-        "reference.html": PAGES["reference"],
-    }
-    for name, args in files.items():
-        (ROOT / name).write_text(page(*args), encoding="utf-8")
-        print("wrote", name)
+    for _, filename, pid in NAV:
+        (ROOT / filename).write_text(page(*PAGES[pid]), encoding="utf-8")
+        print("wrote", filename)
 
 
 if __name__ == "__main__":

@@ -4,7 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Utilities — hive-tx</title>
-  <meta name="description" content="The utils object has stake and mana math, vote values, reputation, permlinks, name validation, history filters, and witness properties.">
+  <meta name="description" content="The utils object has stake and mana math, vote values, reputation, social operations, account keys, permlinks, name validation, history filters, and witness properties.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Utilities — hive-tx">
+  <meta property="og:description" content="The utils object has stake and mana math, vote values, reputation, social operations, account keys, permlinks, name validation, history filters, and witness properties.">
+  <meta property="og:image" content="https://mahdiyari.github.io/hive-tx/assets/cover.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -41,6 +46,7 @@
 <a href="keys.html" data-page="keys">Keys</a>
 <a href="memo.html" data-page="memo">Memos</a>
 <a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="streams.html" data-page="streams">Streams</a>
 <a href="config.html" data-page="config">Configuration</a>
 <a href="utils.html" data-page="utils" class="current">Utilities</a>
 <label>Reference</label>
@@ -51,44 +57,44 @@
       <article>
         <p class="kicker">Use</p>
         <h1>Utilities</h1>
-        <p class="lead">The utils object has stake and mana math, vote values, reputation, permlinks, name validation, history filters, and witness properties.</p>
+        <p class="lead">The utils object has stake and mana math, vote values, reputation, social operations, account keys, permlinks, name validation, history filters, and witness properties.</p>
         
-<p>The stake, mana, and vote helpers are async and fetch what they need: account, global properties, reward fund, and price. Fetched data is cached for 2 seconds and shared by concurrent calls, so calling several helpers in a row costs one request per kind of data. Results are JavaScript numbers, accurate for display and estimates.</p>
+<p>The stake, mana, and vote helpers are async and fetch what they need: the account, global properties, reward fund, and price. That data is cached for 2 seconds and shared between concurrent calls, so several helpers in a row cost one request per kind of data. Results are JavaScript numbers, fine for display and estimates.</p>
 <h2>Voting power and mana</h2>
 <pre><code class="language-javascript">import { utils } from 'hive-tx'
 
-await utils.getVotingMana('alice')      // { current, max, percentage }
+await utils.getVotingMana('alice')      // { current, max, percentage, fullAt }
 await utils.getDownvoteMana('alice')
 await utils.getRCMana('alice')
 await utils.getEffectiveVests('alice')  // own + received - delegated - this week's power down</code></pre>
-<p>Instead of a name, you can pass an account object you already have, from <code>condenser_api.get_accounts</code> or <code>database_api.find_accounts</code> (for <code>getRCMana</code>, from <code>rc_api.find_rc_accounts</code>). That skips the request.</p>
-<p>Mana is regenerated to now; pass a time in milliseconds as the last argument to compute it at another time. Mana refills from 0 to 100% in 5 days. Downvote mana is 25% of voting mana. <code>fullAt</code> is a <code>Date</code> for when the mana will be full.</p>
+<p>Instead of a name, you can pass an account object you already have, from <code>condenser_api.get_accounts</code> or <code>database_api.find_accounts</code> (or from <code>rc_api.find_rc_accounts</code> for <code>getRCMana</code>). That skips the request.</p>
+<p>Mana is computed for now; pass a time in milliseconds as the last argument to compute it for another moment. Mana refills from 0 to 100% in 5 days, and downvote mana is 25% of voting mana. <code>fullAt</code> is the <code>Date</code> the mana will be full.</p>
 <h2>Hive Power</h2>
-<pre><code class="language-javascript">await utils.vestsToHP('1000.000000 VESTS')  // number of HIVE
-await utils.hpToVests(100)                  // number of VESTS
+<pre><code class="language-javascript">await utils.vestsToHP('1000.000000 VESTS')  // HIVE
+await utils.hpToVests(100)                  // VESTS
 utils.parseAsset('1.000 HIVE')              // { amount: 1, symbol: 'HIVE' }</code></pre>
 <p><code>parseAsset</code> also reads the <code>{ amount, precision, nai }</code> format of <code>database_api</code>.</p>
 <h2>Prices and interest</h2>
 <pre><code class="language-javascript">await utils.hiveToHbd(10)          // HBD, at the witnesses' median price
 await utils.hbdToHive('10.000 HBD')
-await utils.getHpApr()             // yearly HIVE Power interest, percent
+await utils.getHpApr()             // yearly Hive Power interest, percent
 await utils.getHbdApr()            // yearly interest on HBD in savings, percent</code></pre>
 <h2>Account value</h2>
 <pre><code class="language-javascript">await utils.estimateAccountValue('alice')  // HBD</code></pre>
-<p>Counts liquid and savings HIVE and HBD, own HIVE Power (including delegated out), and funds in open market orders, at the median price.</p>
+<p>Counts liquid and savings HIVE and HBD, own Hive Power (including what is delegated out), and funds in open market orders, at the median price.</p>
 <h2>Vote value</h2>
 <pre><code class="language-javascript">await utils.getVoteValue('alice')         // HBD, 100% vote
 await utils.getVoteValue('alice', 5000)   // 50% vote
 await utils.getVoteRShares('alice')       // rshares
-await utils.rsharesToHBD(rshares)         // HBD of any rshares</code></pre>
-<p>Weight is -10000 to 10000. Since HF28, vote strength depends on stake and weight only. Current mana limits how many votes an account can cast, not how strong each vote is. The value combines author and curation rewards.</p>
+await utils.rsharesToHBD(rshares)         // HBD for any rshares</code></pre>
+<p>Weight runs from -10000 to 10000. Since HF28, a vote's strength depends only on stake and weight; current mana limits how many votes an account can cast, not how strong each one is. The value includes both author and curation rewards.</p>
 <h2>Reputation</h2>
-<pre><code class="language-javascript">utils.formatReputation('225722985673795')  // 73.18</code></pre>
-<p>Converts raw reputation, as returned by <code>condenser_api.get_account_reputations</code>, to the usual score. Use <code>Math.floor</code> for the whole number most frontends show.</p>
+<pre><code class="language-javascript">utils.formatReputation('225722985673795')  // 73.18…</code></pre>
+<p>Converts raw reputation, as returned by <code>condenser_api.get_account_reputations</code>, to the familiar score. Use <code>Math.floor</code> for the whole number most frontends show.</p>
 <h2>createPermlink</h2>
 <pre><code class="language-javascript">utils.createPermlink('Hello World!')  // 'hello-world-3f9a1c0b7e2d'
 utils.createPermlink()                // '3f9a1c0b7e2d', for replies</code></pre>
-<p>Makes a valid permlink from a title, with a random suffix so titles can repeat.</p>
+<p>Makes a valid permlink from a title, with a random suffix so the same title can be used twice.</p>
 <h2>Social operations</h2>
 <p>These build the <code>custom_json</code> operations that Hivemind reads. Sign them with the posting key.</p>
 <pre><code class="language-javascript">const tx = new Transaction()
@@ -98,7 +104,7 @@ await tx.addOperation(...utils.follow('alice', 'bob'))
 //       followBlacklist, unfollowBlacklist, followMuted, unfollowMuted: use another account's lists
 //       reblog(account, author, permlink)
 //       subscribe, unsubscribe(account, 'hive-123456')</code></pre>
-<p>Unfollow clears a follow or a mute; removing a blacklist entry needs <code>unblacklist</code>.</p>
+<p><code>unfollow</code> clears a follow or a mute; removing a blacklist entry needs <code>unblacklist</code>.</p>
 <h2>Account keys</h2>
 <pre><code class="language-javascript">const password = utils.createPassword()  // 'P5...', show it to the user once
 const { privateKeys, owner, active, posting, memo_key } = utils.generateKeys('newuser', password)
@@ -116,17 +122,13 @@ await tx.addOperation('create_claimed_account', {
 
 utils.isValidWif('5J...')         // true or false
 utils.isValidPublicKey('STM...')  // checks prefix, checksum, and curve point</code></pre>
-<p><code>generateKeys</code> derives keys the same way Hive wallets do, so the user can log in with the password. <code>privateKeys</code> has the owner, active, posting, and memo keys.</p>
+<p><code>generateKeys</code> derives keys the way Hive wallets do, so the user can log in with the password. <code>privateKeys</code> holds the owner, active, posting, and memo keys.</p>
 <h2>validateUsername</h2>
-<p>The function returns <code>null</code> if the name is valid. The function returns an error string if the name is not valid.</p>
-<pre><code class="language-javascript">import { utils } from 'hive-tx'
-
-const error = utils.validateUsername('alice')
-if (error) {
-  console.log(error)
-}</code></pre>
+<p>Returns <code>null</code> for a valid name, or a string that explains what is wrong.</p>
+<pre><code class="language-javascript">const error = utils.validateUsername('alice')
+if (error) console.log(error)</code></pre>
 <h2>makeBitMaskFilter</h2>
-<p>Use the filter with <code>condenser_api.get_account_history</code>.</p>
+<p>Builds the operation filter for <code>condenser_api.get_account_history</code>.</p>
 <pre><code class="language-javascript">const filter = utils.makeBitMaskFilter([
   utils.operations.transfer,
   utils.operations.vote,
@@ -138,24 +140,25 @@ const history = await callRPC('condenser_api.get_account_history', [
   100,
   ...filter
 ])</code></pre>
-<p><code>utils.operations</code> maps operation names to numeric ids. Example: <code>vote</code> is 0. <code>transfer</code> is 2.</p>
+<p><code>utils.operations</code> maps operation names to their numeric ids, for example <code>vote</code> is 0 and <code>transfer</code> is 2.</p>
 <h2>buildWitnessSetProperties</h2>
-<p>This helper is required for <code>witness_set_properties</code>. The helper serializes property values to hex.</p>
+<p>Builds a <code>witness_set_properties</code> operation, serializing each property to hex as the chain requires.</p>
 <pre><code class="language-javascript">const operation = utils.buildWitnessSetProperties('mywitness', {
-  key: 'STM1111111111111111111111111111111114T1Anm',
-  account_creation_fee: '0.000 HIVE',
+  key: 'STM...current-signing-key',
+  account_creation_fee: '3.000 HIVE',
   maximum_block_size: 65536,
   url: 'https://example.com'
 })
 const tx = new Transaction()
-await tx.addOperation(operation[0], operation[1])</code></pre>
-<p>The <code>key</code> field is required. The field is the current signing public key.</p>
+await tx.addOperation(...operation)</code></pre>
+<p><code>key</code> is required and must be the witness's current signing public key. Sign with the matching private key.</p>
 
         <p class="footer-note">hive-tx is MIT licensed.</p>
       </article>
     </main>
   </div>
-  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
+    integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

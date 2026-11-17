@@ -4,7 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Memos — hive-tx</title>
-  <meta name="description" content="Memo.encode encrypts a private message. Memo.decode decrypts the message.">
+  <meta name="description" content="Memo.encode encrypts a private message and Memo.decode decrypts it.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Memos — hive-tx">
+  <meta property="og:description" content="Memo.encode encrypts a private message and Memo.decode decrypts it.">
+  <meta property="og:image" content="https://mahdiyari.github.io/hive-tx/assets/cover.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -41,6 +46,7 @@
 <a href="keys.html" data-page="keys">Keys</a>
 <a href="memo.html" data-page="memo" class="current">Memos</a>
 <a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="streams.html" data-page="streams">Streams</a>
 <a href="config.html" data-page="config">Configuration</a>
 <a href="utils.html" data-page="utils">Utilities</a>
 <label>Reference</label>
@@ -51,42 +57,36 @@
       <article>
         <p class="kicker">Use</p>
         <h1>Memos</h1>
-        <p class="lead">Memo.encode encrypts a private message. Memo.decode decrypts the message.</p>
+        <p class="lead">Memo.encode encrypts a private message and Memo.decode decrypts it.</p>
         
 <h2>Rules</h2>
 <ul>
-  <li>If the memo text starts with <code>#</code>, the library encrypts the text.</li>
-  <li>If the memo text does not start with <code>#</code>, the library returns the text with no change.</li>
-  <li>Use the sender memo private key to encrypt.</li>
-  <li>Use the recipient memo public key to encrypt.</li>
-  <li>Use the recipient memo private key to decrypt.</li>
+  <li>Only text that starts with <code>#</code> is encrypted; other text is returned unchanged.</li>
+  <li>Encrypt with the sender's memo private key and the recipient's memo public key.</li>
+  <li>Decrypt with either side's memo private key.</li>
 </ul>
 <h2>Encrypt</h2>
 <pre><code class="language-javascript">import { Memo, PrivateKey } from 'hive-tx'
 
 const senderMemoKey = PrivateKey.from('5J...sender-memo-key')
-const encrypted = Memo.encode(
-  senderMemoKey,
-  'STM...recipient-memo-public-key',
-  '#Hello'
-)</code></pre>
-<p>Put the encrypted string in a transfer <code>memo</code> field.</p>
-<p>To encrypt by account name, use <code>encodeForAccount</code>. It looks up the recipient's memo public key:</p>
+const encrypted = Memo.encode(senderMemoKey, 'STM...recipient-memo-public-key', '#Hello')</code></pre>
+<p>To encrypt by account name, use <code>encodeForAccount</code>; it looks up the recipient's memo key:</p>
 <pre><code class="language-javascript">const encrypted = await Memo.encodeForAccount(senderMemoKey, 'bob', '#Hello')</code></pre>
+<p>Put the result in a transfer's <code>memo</code> field.</p>
 <h2>Decrypt</h2>
 <pre><code class="language-javascript">const recipientMemoKey = PrivateKey.from('5J...recipient-memo-key')
-const text = Memo.decode(recipientMemoKey, encryptedMemo)
-// text starts with '#'</code></pre>
+const text = Memo.decode(recipientMemoKey, encryptedMemo) // starts with '#'</code></pre>
 <div class="callout caution">
   <strong>Caution</strong>
-  Encryption uses AES in CBC mode. The memo key is not the posting key. The memo key is not the active key.
+  Memos use AES-CBC with a key shared between the two memo keys. The memo key is separate from the posting and active keys; do not use those to encrypt.
 </div>
 
         <p class="footer-note">hive-tx is MIT licensed.</p>
       </article>
     </main>
   </div>
-  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
+    integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

@@ -5,6 +5,11 @@
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Migration from v6 — hive-tx</title>
   <meta name="description" content="Version 7 is a TypeScript rewrite. Some names and units changed.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Migration from v6 — hive-tx">
+  <meta property="og:description" content="Version 7 is a TypeScript rewrite. Some names and units changed.">
+  <meta property="og:image" content="https://mahdiyari.github.io/hive-tx/assets/cover.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -41,6 +46,7 @@
 <a href="keys.html" data-page="keys">Keys</a>
 <a href="memo.html" data-page="memo">Memos</a>
 <a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="streams.html" data-page="streams">Streams</a>
 <a href="config.html" data-page="config">Configuration</a>
 <a href="utils.html" data-page="utils">Utilities</a>
 <label>Reference</label>
@@ -57,12 +63,12 @@
   <thead><tr><th>v6</th><th>v7</th></tr></thead>
   <tbody>
     <tr><td><code>tx.create([[name, body]])</code></td><td><code>await tx.addOperation(name, body)</code></td></tr>
-    <tr><td><code>call()</code></td><td><code>callRPC()</code> returns the result and throws <code>RPCError</code></td></tr>
+    <tr><td><code>call()</code></td><td><code>callRPC()</code>, which returns the result and throws <code>RPCError</code></td></tr>
     <tr><td><code>broadcast(timeout, retry)</code></td><td><code>broadcast(checkStatus)</code></td></tr>
-    <tr><td>Timeout in seconds</td><td>Timeout in milliseconds</td></tr>
+    <tr><td>Timeouts in seconds</td><td>Timeouts and expiration in milliseconds</td></tr>
     <tr><td><code>new Transaction(tx)</code></td><td><code>new Transaction({ transaction, expiration })</code></td></tr>
     <tr><td><code>Transaction.signedTransaction</code></td><td><code>Transaction.transaction</code></td></tr>
-    <tr><td><code>config.node</code> string</td><td><code>config.nodes</code> array</td></tr>
+    <tr><td><code>config.node</code> (string)</td><td><code>config.nodes</code> (array)</td></tr>
     <tr><td><code>config.healthcheckInterval</code></td><td>Removed</td></tr>
   </tbody>
 </table>
@@ -79,7 +85,7 @@ await tx.addOperation('vote', {
   permlink: 'post',
   weight: 10000
 })</code></pre>
-<h2>API call</h2>
+<h2>Call an API</h2>
 <pre><code class="language-javascript">// v6
 const result = await call('condenser_api.get_accounts', [['alice']])
 const accounts = result.result
@@ -99,7 +105,8 @@ config.timeout = 10_000</code></pre>
       </article>
     </main>
   </div>
-  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
+    integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

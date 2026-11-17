@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Streams — hive-tx</title>
+  <meta name="description" content="streamBlocks, streamBlockNumbers, and streamOperations follow the chain's irreversible blocks, in order, with no gaps or duplicates.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Streams — hive-tx">
+  <meta property="og:description" content="streamBlocks, streamBlockNumbers, and streamOperations follow the chain's irreversible blocks, in order, with no gaps or duplicates.">
+  <meta property="og:image" content="https://mahdiyari.github.io/hive-tx/assets/cover.png">
+  <meta name="twitter:card" content="summary_large_image">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
+  <link rel="stylesheet" href="assets/style.css">
+  <script>
+    (function () {
+      var key = 'hive-tx-theme'
+      var stored = localStorage.getItem(key)
+      var theme = stored === 'light' || stored === 'dark'
+        ? stored
+        : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+      document.documentElement.setAttribute('data-theme', theme)
+    })()
+  </script>
+</head>
+<body data-page="streams">
+  <a class="skip" href="#main">Skip to content</a>
+  <header class="top">
+    <button class="menu-btn" type="button" aria-expanded="false" aria-controls="nav">Menu</button>
+    <a class="brand" href="index.html">hive-tx <small>v7</small></a>
+    <div class="top-actions">
+      <button class="theme-btn" type="button" data-theme-toggle>Light</button>
+      <a class="pill" href="https://github.com/mahdiyari/hive-tx">GitHub</a>
+      <a class="pill primary" href="https://www.npmjs.com/package/hive-tx">npm</a>
+    </div>
+  </header>
+  <div class="shell">
+    <aside id="nav"><label>Start</label>
+<a href="index.html" data-page="index">Overview</a>
+<a href="install.html" data-page="install">Install</a>
+<a href="start.html" data-page="start">Quick start</a>
+<a href="examples.html" data-page="examples">Examples</a>
+<label>Use</label>
+<a href="transactions.html" data-page="transactions">Transactions</a>
+<a href="keys.html" data-page="keys">Keys</a>
+<a href="memo.html" data-page="memo">Memos</a>
+<a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="streams.html" data-page="streams" class="current">Streams</a>
+<a href="config.html" data-page="config">Configuration</a>
+<a href="utils.html" data-page="utils">Utilities</a>
+<label>Reference</label>
+<a href="environments.html" data-page="environments">Environments</a>
+<a href="migrate.html" data-page="migrate">Migration from v6</a>
+<a href="reference.html" data-page="reference">API reference</a></aside>
+    <main id="main">
+      <article>
+        <p class="kicker">Use</p>
+        <h1>Streams</h1>
+        <p class="lead">streamBlocks, streamBlockNumbers, and streamOperations follow the chain's irreversible blocks, in order, with no gaps or duplicates.</p>
+        
+<p>Streams read only irreversible blocks, so you never see a block that later disappears in a fork. Hive blocks become irreversible within seconds, so streams run close to real time.</p>
+<p>All three are async generators. They catch up on past blocks in batches of 20, then poll every second. <code>break</code> stops a stream. If every node fails, the stream throws.</p>
+<table>
+  <thead><tr><th>Option</th><th>Default</th><th>Meaning</th></tr></thead>
+  <tbody>
+    <tr><td><code>from</code></td><td>last irreversible block</td><td>First block to yield</td></tr>
+    <tr><td><code>to</code></td><td>none</td><td>Last block to yield; the stream ends after it</td></tr>
+    <tr><td><code>only_virtual</code></td><td><code>false</code></td><td><code>streamOperations</code> only: yield just virtual operations</td></tr>
+  </tbody>
+</table>
+<h2>streamOperations</h2>
+<p>Yields every operation in chain order, virtual operations included, like <code>get_ops_in_block</code>. Virtual operations are the ones the chain creates itself, such as rewards, order fills, and interest.</p>
+<pre><code class="language-javascript">import { streamOperations } from 'hive-tx'
+
+for await (const { block, trx_id, op } of streamOperations()) {
+  if (op[0] === 'transfer') console.log(block, trx_id, op[1].from, op[1].amount)
+  if (op[0] === 'producer_reward') console.log(block, op[1].producer)
+}</code></pre>
+<p>Each item has <code>block</code>, <code>trx_id</code>, <code>trx_in_block</code>, <code>op_in_trx</code>, <code>virtual_op</code>, <code>timestamp</code>, and <code>op</code>.</p>
+<h2>streamBlocks</h2>
+<p>Yields whole blocks with their transactions.</p>
+<pre><code class="language-javascript">import { streamBlocks } from 'hive-tx'
+
+for await (const block of streamBlocks()) {
+  for (const tx of block.transactions) {
+    for (const [name, body] of tx.operations) {
+      if (name === 'transfer') {
+        console.log(block.block_num, tx.transaction_id, body.from, body.to, body.amount)
+      }
+    }
+  }
+}</code></pre>
+<h2>streamBlockNumbers</h2>
+<p>Yields block numbers only, without fetching the blocks. Use it to drive your own fetching.</p>
+<pre><code class="language-javascript">import { streamBlockNumbers } from 'hive-tx'
+
+for await (const num of streamBlockNumbers()) {
+  console.log(num)
+}</code></pre>
+<h2>Resume after a restart</h2>
+<p>Save the number of the last block you fully handled, then restart with <code>from</code> set to the next one:</p>
+<pre><code class="language-javascript">for await (const block of streamBlocks({ from: savedBlockNum + 1 })) {
+  await handle(block)
+  savedBlockNum = block.block_num
+}</code></pre>
+<p>Read a past range by setting both ends: <code>streamBlocks({ from: 1000, to: 1999 })</code>.</p>
+
+        <p class="footer-note">hive-tx is MIT licensed.</p>
+      </article>
+    </main>
+  </div>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
+    integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
+  <script src="assets/site.js"></script>
+</body>
+</html>

@@ -4,7 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>RPC and REST calls — hive-tx</title>
-  <meta name="description" content="callRPC, callRPCBatch, callREST, and callWithQuorum send requests to Hive nodes.">
+  <meta name="description" content="callRPC, callRPCBatch, callWithQuorum, and callREST send requests to Hive nodes, with failover.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="RPC and REST calls — hive-tx">
+  <meta property="og:description" content="callRPC, callRPCBatch, callWithQuorum, and callREST send requests to Hive nodes, with failover.">
+  <meta property="og:image" content="https://mahdiyari.github.io/hive-tx/assets/cover.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -41,6 +46,7 @@
 <a href="keys.html" data-page="keys">Keys</a>
 <a href="memo.html" data-page="memo">Memos</a>
 <a href="rpc.html" data-page="rpc" class="current">RPC and REST</a>
+<a href="streams.html" data-page="streams">Streams</a>
 <a href="config.html" data-page="config">Configuration</a>
 <a href="utils.html" data-page="utils">Utilities</a>
 <label>Reference</label>
@@ -51,48 +57,42 @@
       <article>
         <p class="kicker">Use</p>
         <h1>RPC and REST calls</h1>
-        <p class="lead">callRPC, callRPCBatch, callREST, and callWithQuorum send requests to Hive nodes.</p>
+        <p class="lead">callRPC, callRPCBatch, callWithQuorum, and callREST send requests to Hive nodes, with failover.</p>
         
 <h2>callRPC</h2>
-<p><code>callRPC</code> sends a JSON-RPC 2.0 request. The function returns the result. The function throws <code>RPCError</code> for a Hive RPC error.</p>
+<p>Sends a JSON-RPC 2.0 request and returns the result. A Hive error throws <code>RPCError</code>.</p>
 <pre><code class="language-javascript">import { callRPC } from 'hive-tx'
 
 const accounts = await callRPC('condenser_api.get_accounts', [['alice']])
 const props = await callRPC('condenser_api.get_dynamic_global_properties')</code></pre>
-<p>Parameters:</p>
 <table>
-  <thead><tr><th>Name</th><th>Default</th><th>Function</th></tr></thead>
+  <thead><tr><th>Parameter</th><th>Default</th><th>Meaning</th></tr></thead>
   <tbody>
     <tr><td><code>method</code></td><td>required</td><td>API method name</td></tr>
     <tr><td><code>params</code></td><td><code>[]</code></td><td>Array or object</td></tr>
-    <tr><td><code>timeout</code></td><td><code>config.timeout</code></td><td>Timeout in milliseconds</td></tr>
-    <tr><td><code>retry</code></td><td><code>config.retry</code></td><td>Retry count after a network failure</td></tr>
+    <tr><td><code>timeout</code></td><td><code>config.timeout</code></td><td>Per request, in milliseconds</td></tr>
+    <tr><td><code>retry</code></td><td><code>config.retry</code></td><td>How many other nodes to try after a failure</td></tr>
   </tbody>
 </table>
-<p>If a node does not respond, the library selects the next URL in <code>config.nodes</code>.</p>
-<p>Hive API names are in the Hive developer documentation.</p>
+<p>When a node times out or fails, the call moves to the next URL in <code>config.nodes</code>. A Hive <code>RPCError</code> is not retried, because every node would give the same answer. Method names are in the <a href="https://developers.hive.io/apidefinitions/">Hive API definitions</a>.</p>
 <h2>callRPCBatch</h2>
-<p><code>callRPCBatch</code> calls one method many times in a single JSON-RPC batch request. It takes a list of params, one entry per call, and returns the results in the same order. Failover, <code>timeout</code>, and <code>retry</code> work like <code>callRPC</code>. If any call fails with a Hive RPC error, the function throws <code>RPCError</code>.</p>
+<p>Calls one method many times in a single JSON-RPC batch request. Pass one params entry per call; results come back in the same order. Failover, <code>timeout</code>, and <code>retry</code> work like <code>callRPC</code>. If any call in the batch fails with a Hive error, it throws <code>RPCError</code>.</p>
 <pre><code class="language-javascript">import { callRPCBatch } from 'hive-tx'
 
 const blocks = await callRPCBatch('condenser_api.get_block', [[1], [2], [3]])</code></pre>
-<p>Use it to fetch many items with one request instead of many. Keep batches modest, such as 20 to 50 calls; nodes time out on very large responses.</p>
+<p>Keep batches modest, around 20 to 50 calls: nodes time out on very large responses.</p>
 <h2>callWithQuorum</h2>
-<p><code>callWithQuorum</code> sends the same method to more than one node. The function returns a result only if that number of nodes give the same JSON.</p>
+<p>Sends the call to several random nodes and returns only when <code>quorum</code> of them return identical JSON. Use it when a wrong answer from one node would be costly.</p>
 <pre><code class="language-javascript">import { callWithQuorum } from 'hive-tx'
 
-const accounts = await callWithQuorum(
-  'condenser_api.get_accounts',
-  [['alice']],
-  2
-)</code></pre>
-<p>The default quorum is 2. The quorum must be less than or equal to <code>config.nodes.length</code>.</p>
+const accounts = await callWithQuorum('condenser_api.get_accounts', [['alice']], 2)</code></pre>
+<p>The default quorum is 2, and it cannot exceed <code>config.nodes.length</code>.</p>
 <div class="callout note">
   <strong>Note</strong>
-  Quorum is JSON equality. Quorum is not a check of head-block lag. Do not change <code>config.nodes</code> during concurrent calls.
+  Quorum compares results; it does not check head-block lag. Nodes a block apart can disagree on fast-changing data.
 </div>
 <h2>callREST</h2>
-<p><code>callREST</code> calls a REST API on <code>config.restNodes</code>. Not all public nodes have REST APIs.</p>
+<p>Calls a REST API on <code>config.restNodes</code>. Not every public node serves REST.</p>
 <pre><code class="language-javascript">import { callREST } from 'hive-tx'
 
 const balance = await callREST(
@@ -100,64 +100,37 @@ const balance = await callREST(
   '/accounts/{account-name}/balances',
   { 'account-name': 'alice' }
 )</code></pre>
-<p>API names:</p>
-<ul>
-  <li><code>balance</code></li>
-  <li><code>hafah</code></li>
-  <li><code>hafbe</code></li>
-  <li><code>hivemind</code></li>
-  <li><code>hivesense</code></li>
-  <li><code>reputation</code></li>
-  <li><code>nft-tracker</code></li>
-  <li><code>hafsql</code></li>
-  <li><code>status</code></li>
-</ul>
-<p>A path parameter uses <code>{name}</code> in the path. Other fields become query parameters. TypeScript checks path names for each API.</p>
-<h2>Stream blocks</h2>
-<p><code>streamBlocks</code> yields irreversible blocks in order, with no gaps or duplicates. Hive blocks become irreversible within seconds, so the stream is close to real time.</p>
-<pre><code class="language-javascript">import { streamBlocks } from 'hive-tx'
-
-for await (const block of streamBlocks()) {
-  for (const tx of block.transactions) {
-    for (const [name, body] of tx.operations) {
-      if (name === 'transfer') {
-        console.log(block.block_num, tx.transaction_id, body.from, body.to, body.amount)
-      }
-    }
-  }
-}</code></pre>
+<p>APIs: <code>balance</code>, <code>hafah</code>, <code>hafbe</code>, <code>hivemind</code>, <code>hivesense</code>, <code>reputation</code>, <code>nft-tracker</code>, <code>hafsql</code>, and <code>status</code>. TypeScript checks the endpoint, its parameters, and the response for each one.</p>
+<p>Fields named in the path, like <code>{account-name}</code>, fill the path; the rest become query parameters, and arrays repeat the key.</p>
 <table>
-  <thead><tr><th>Option</th><th>Default</th><th>Effect</th></tr></thead>
+  <thead><tr><th>Parameter</th><th>Default</th><th>Meaning</th></tr></thead>
   <tbody>
-    <tr><td><code>from</code></td><td>last irreversible block</td><td>First block to yield</td></tr>
-    <tr><td><code>to</code></td><td>none</td><td>Last block to yield; the stream ends after it</td></tr>
+    <tr><td><code>api</code></td><td>required</td><td>One of the API names above</td></tr>
+    <tr><td><code>endpoint</code></td><td>required</td><td>Endpoint path, with <code>{placeholders}</code></td></tr>
+    <tr><td><code>params</code></td><td>none</td><td>Path and query values</td></tr>
+    <tr><td><code>timeout</code></td><td><code>config.timeout</code></td><td>Per request, in milliseconds</td></tr>
+    <tr><td><code>retry</code></td><td><code>config.retry</code></td><td>How many other nodes to try after a failure</td></tr>
   </tbody>
 </table>
-<p>Past blocks are fetched 20 per request. Once caught up, the stream polls every second. <code>break</code> stops the stream. If every node fails, the stream throws. Save <code>block.block_num</code> and resume with <code>from: savedNum + 1</code>.</p>
-<h2>Stream block numbers</h2>
-<p><code>streamBlockNumbers</code> yields irreversible block numbers the same way, without fetching the blocks. It takes <code>from</code> and <code>to</code> like <code>streamBlocks</code>.</p>
-<pre><code class="language-javascript">import { streamBlockNumbers } from 'hive-tx'
-
-for await (const num of streamBlockNumbers()) {
-  console.log(num)
-}</code></pre>
-<h2>Stream operations</h2>
-<p><code>streamOperations</code> yields every operation of irreversible blocks in chain order, virtual operations included, like <code>get_ops_in_block</code>. Virtual operations are created by the chain, such as rewards, order fills, and interest. Pass <code>only_virtual: true</code> to get only those.</p>
-<pre><code class="language-javascript">import { streamOperations } from 'hive-tx'
-
-for await (const { block, trx_id, op } of streamOperations()) {
-  if (op[0] === 'transfer') console.log(block, trx_id, op[1].from, op[1].amount)
-  if (op[0] === 'producer_reward') console.log(block, op[1].producer)
-}</code></pre>
-<p>It takes <code>from</code> and <code>to</code> like <code>streamBlocks</code>, plus <code>only_virtual</code> (default <code>false</code>). Each item has <code>block</code>, <code>trx_id</code>, <code>trx_in_block</code>, <code>op_in_trx</code>, <code>virtual_op</code>, <code>timestamp</code>, and <code>op</code>. To resume, pass <code>from</code> as the last block you fully handled plus one.</p>
+<p>Network errors, timeouts, and HTTP 5xx move to the next REST node. HTTP 404 throws at once without failover, because it usually means a wrong endpoint or parameter.</p>
 <h2>RPCError</h2>
-<p><code>RPCError</code> has <code>message</code>, <code>code</code>, and optional <code>data</code>.</p>
+<p><code>RPCError</code> has <code>message</code>, <code>code</code>, and optional <code>data</code> from the node.</p>
+<pre><code class="language-javascript">import { callRPC, RPCError } from 'hive-tx'
+
+try {
+  await callRPC('condenser_api.get_accounts', [['alice']])
+} catch (e) {
+  if (e instanceof RPCError) console.log(e.code, e.message, e.data)
+  else throw e // every node failed
+}</code></pre>
+<p>To follow new blocks and operations, see <a href="streams.html">Streams</a>.</p>
 
         <p class="footer-note">hive-tx is MIT licensed.</p>
       </article>
     </main>
   </div>
-  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
+    integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

@@ -4,7 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Transactions — hive-tx</title>
-  <meta name="description" content="A Transaction object holds operations, signatures, and expiration data.">
+  <meta name="description" content="A Transaction holds operations, signatures, and an expiration.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Transactions — hive-tx">
+  <meta property="og:description" content="A Transaction holds operations, signatures, and an expiration.">
+  <meta property="og:image" content="https://mahdiyari.github.io/hive-tx/assets/cover.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -41,6 +46,7 @@
 <a href="keys.html" data-page="keys">Keys</a>
 <a href="memo.html" data-page="memo">Memos</a>
 <a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="streams.html" data-page="streams">Streams</a>
 <a href="config.html" data-page="config">Configuration</a>
 <a href="utils.html" data-page="utils">Utilities</a>
 <label>Reference</label>
@@ -51,62 +57,76 @@
       <article>
         <p class="kicker">Use</p>
         <h1>Transactions</h1>
-        <p class="lead">A Transaction object holds operations, signatures, and expiration data.</p>
+        <p class="lead">A Transaction holds operations, signatures, and an expiration.</p>
         
-<h2>Create a transaction</h2>
+<h2>Create</h2>
 <pre><code class="language-javascript">const tx = new Transaction()
 const txLong = new Transaction({ expiration: 120_000 })</code></pre>
-<p>Expiration is in milliseconds. The default is 60000 (1 minute). The maximum is 86400000 (24 hours).</p>
-<p>You can wrap an existing transaction object:</p>
+<p>Expiration is in milliseconds. The default is 60000 (1 minute). The chain rejects anything over 86400000 (24 hours); the library does not check it for you.</p>
+<p>To wrap an existing transaction object, for example one signed elsewhere:</p>
 <pre><code class="language-javascript">const tx = new Transaction({ transaction: rawTx })</code></pre>
-<h2>Add an operation</h2>
-<p><code>addOperation</code> is async. The first call gets chain properties and sets <code>ref_block_num</code> and <code>ref_block_prefix</code>.</p>
+<h2>Add operations</h2>
+<p><code>addOperation</code> is async: the first call fetches chain properties to set <code>ref_block_num</code> and <code>ref_block_prefix</code>. Those properties are cached for 2 seconds, so building several transactions in a row costs one request. A transaction can hold many operations.</p>
 <pre><code class="language-javascript">await tx.addOperation('transfer', {
   from: 'sender',
   to: 'receiver',
   amount: '1.000 HIVE',
   memo: 'payment'
 })</code></pre>
-<p>You can add more than one operation to the same transaction.</p>
 <h2>Sign</h2>
-<p><code>sign</code> accepts one <code>PrivateKey</code> or an array of keys.</p>
+<p><code>sign</code> takes one <code>PrivateKey</code> or an array, appends the signatures, and returns the transaction. Call <code>addOperation</code> first; signing an empty transaction throws.</p>
 <pre><code class="language-javascript">tx.sign(privateKey)
 tx.sign([postingKey, activeKey])</code></pre>
-<p>If there is no transaction, <code>sign</code> throws an error. Call <code>addOperation</code> first.</p>
 <h2>Broadcast</h2>
 <pre><code class="language-javascript">const quick = await tx.broadcast()
 const confirmed = await tx.broadcast(true)</code></pre>
 <table>
-  <thead><tr><th>Argument</th><th>Result</th></tr></thead>
+  <thead><tr><th>Argument</th><th>Returns when</th></tr></thead>
   <tbody>
-    <tr><td><code>false</code> (default)</td><td>The function returns after the node accepts the transaction. Status is <code>unknown</code>.</td></tr>
-    <tr><td><code>true</code></td><td>The function waits until the transaction is in an irreversible block, or until the transaction expires.</td></tr>
+    <tr><td><code>false</code> (default)</td><td>A node accepts the transaction. <code>status</code> is <code>unknown</code>.</td></tr>
+    <tr><td><code>true</code></td><td>The transaction is in an irreversible block, or it expired.</td></tr>
   </tbody>
 </table>
-<p>If there is no signature, <code>broadcast</code> throws an error.</p>
-<p>If a retry causes a duplicate transaction error, the library ignores that error.</p>
-<h2>Digest and transaction id</h2>
-<pre><code class="language-javascript">const { digest, txId } = tx.digest()</code></pre>
-<p><code>digest</code> is a 32-byte hash. Use the digest to verify a signature. <code>txId</code> is the first 40 hex characters of the SHA-256 hash of the serialized transaction.</p>
-<h2>Add an external signature</h2>
-<p>Use <code>addSignature</code> when an external tool creates the signature. The signature must be a hex string with 130 characters.</p>
-<pre><code class="language-javascript">tx.addSignature(hexSignature)</code></pre>
-<h2>Status values</h2>
+<p>Broadcasting an unsigned transaction throws. If a retry hits a duplicate-transaction error, the library ignores it, because the first attempt went through.</p>
+<h2>Errors</h2>
+<p>If the chain rejects the transaction, for example for a missing authority, too little RC, or an invalid operation, <code>broadcast</code> throws <code>RPCError</code> with the node's message. Network failures move on to the next node; when every retry fails, the last network error is thrown.</p>
+<pre><code class="language-javascript">import { RPCError } from 'hive-tx'
+
+try {
+  await tx.broadcast()
+} catch (e) {
+  if (e instanceof RPCError) console.log(e.message)
+  else throw e
+}</code></pre>
+<h2>Check status</h2>
+<p><code>checkStatus</code> asks a node what happened to the transaction. <code>broadcast(true)</code> polls it for you.</p>
+<pre><code class="language-javascript">const { status } = await tx.checkStatus()</code></pre>
 <table>
   <thead><tr><th>Status</th><th>Meaning</th></tr></thead>
   <tbody>
-    <tr><td><code>unknown</code></td><td>The library did not wait for a block, or the wait ended at expiration.</td></tr>
-    <tr><td><code>within_irreversible_block</code></td><td>The transaction is in an irreversible block.</td></tr>
-    <tr><td><code>expired_irreversible</code></td><td>The transaction expired.</td></tr>
-    <tr><td><code>too_old</code></td><td>The transaction is too old for the node.</td></tr>
+    <tr><td><code>unknown</code></td><td>The node has no record of it. From <code>broadcast()</code>, it means the call did not wait.</td></tr>
+    <tr><td><code>within_mempool</code></td><td>Received, not in a block yet.</td></tr>
+    <tr><td><code>within_reversible_block</code></td><td>In a block that is not irreversible yet.</td></tr>
+    <tr><td><code>within_irreversible_block</code></td><td>In an irreversible block. Final.</td></tr>
+    <tr><td><code>expired_reversible</code></td><td>Expired without being included; not final yet.</td></tr>
+    <tr><td><code>expired_irreversible</code></td><td>Expired without being included. Final.</td></tr>
+    <tr><td><code>too_old</code></td><td>Older than the node tracks.</td></tr>
   </tbody>
 </table>
+<p><code>broadcast(true)</code> only returns <code>within_irreversible_block</code>, <code>expired_irreversible</code>, <code>too_old</code>, or <code>unknown</code> if the wait reaches the expiration.</p>
+<h2>Digest and transaction id</h2>
+<pre><code class="language-javascript">const { digest, txId } = tx.digest()</code></pre>
+<p><code>digest</code> is the 32-byte hash that gets signed; use it to verify signatures. <code>txId</code> is the first 40 hex characters of the SHA-256 of the serialized transaction.</p>
+<h2>Add an external signature</h2>
+<p>When a wallet or another tool signs the digest, add its signature as a 130-character hex string:</p>
+<pre><code class="language-javascript">tx.addSignature(hexSignature)</code></pre>
 
         <p class="footer-note">hive-tx is MIT licensed.</p>
       </article>
     </main>
   </div>
-  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
+    integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

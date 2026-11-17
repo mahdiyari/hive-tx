@@ -4,7 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>hive-tx documentation — hive-tx</title>
-  <meta name="description" content="hive-tx is a TypeScript library for the Hive blockchain. The library creates transactions, signs data, and calls Hive APIs.">
+  <meta name="description" content="hive-tx is a lightweight TypeScript SDK for the Hive blockchain. It builds, signs, and broadcasts transactions, calls Hive APIs, and streams the chain.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="hive-tx documentation — hive-tx">
+  <meta property="og:description" content="hive-tx is a lightweight TypeScript SDK for the Hive blockchain. It builds, signs, and broadcasts transactions, calls Hive APIs, and streams the chain.">
+  <meta property="og:image" content="https://mahdiyari.github.io/hive-tx/assets/cover.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -41,6 +46,7 @@
 <a href="keys.html" data-page="keys">Keys</a>
 <a href="memo.html" data-page="memo">Memos</a>
 <a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="streams.html" data-page="streams">Streams</a>
 <a href="config.html" data-page="config">Configuration</a>
 <a href="utils.html" data-page="utils">Utilities</a>
 <label>Reference</label>
@@ -51,42 +57,44 @@
       <article>
         <p class="kicker">Overview</p>
         <h1>hive-tx documentation</h1>
-        <p class="lead">hive-tx is a TypeScript library for the Hive blockchain. The library creates transactions, signs data, and calls Hive APIs.</p>
+        <p class="lead">hive-tx is a lightweight TypeScript SDK for the Hive blockchain. It builds, signs, and broadcasts transactions, calls Hive APIs, and streams the chain.</p>
         
 <div class="cards">
-  <a class="card" href="install.html"><h3>Install</h3><p>Add the package. Use Node.js 20 or later.</p></a>
-  <a class="card" href="start.html"><h3>Quick start</h3><p>Create one vote transaction and broadcast it.</p></a>
+  <a class="card" href="install.html"><h3>Install</h3><p>Node.js 20+, browsers, workers, and serverless runtimes.</p></a>
+  <a class="card" href="start.html"><h3>Quick start</h3><p>Sign and broadcast your first vote.</p></a>
   <a class="card" href="examples.html"><h3>Examples</h3><p>Transfers, comments, memos, RPC, keys, and more.</p></a>
-  <a class="card" href="reference.html"><h3>API reference</h3><p>Classes, functions, and types.</p></a>
+  <a class="card" href="reference.html"><h3>API reference</h3><p>Every export and its signature.</p></a>
 </div>
-<h2>What the library does</h2>
-<p>hive-tx does this work:</p>
+<h2>What it does</h2>
 <ul>
-  <li>Build Hive operations with TypeScript types.</li>
-  <li>Sign operations with secp256k1 keys.</li>
-  <li>Broadcast signed transactions.</li>
-  <li>Call JSON-RPC methods and REST endpoints.</li>
-  <li>Encrypt memos and decrypt memos.</li>
+  <li>Builds operations with a TypeScript type per operation, then signs and broadcasts them.</li>
+  <li>Calls JSON-RPC with node failover, batch requests, and quorum calls that cross-check nodes.</li>
+  <li>Calls typed REST APIs: balance, hafah, hafbe, hivemind, and more.</li>
+  <li>Streams irreversible blocks and operations, virtual ones included, with no gaps or duplicates.</li>
+  <li>Computes voting mana, RC, Hive Power, vote value, APR, account value, and reputation.</li>
+  <li>Builds follow, mute, reblog, and community operations, permlinks, and account keys.</li>
+  <li>Creates keys, verifies signatures, and encrypts memos by public key or account name.</li>
 </ul>
-<p>The library runs in Node.js, in a browser, and in a serverless runtime. The package includes ESM and CommonJS builds. Crypto code is inside the build. The package has no runtime npm dependencies.</p>
+<p>It runs in Node.js, browsers, workers, and serverless runtimes. The package ships ESM and CommonJS builds and has no runtime dependencies: the crypto code is bundled.</p>
 <h2>Requirements</h2>
 <ul>
-  <li>Node.js 20 or later, or a browser that supports ES2024 and <code>fetch</code>.</li>
-  <li>A Hive account and the correct private key for each operation.</li>
+  <li>Node.js 20 or later, or a browser with ES2024 and <code>fetch</code>.</li>
+  <li>A Hive account and the right private key for each operation.</li>
 </ul>
-<h2>Document map</h2>
+<h2>Where to go next</h2>
 <ol>
-  <li>Install the package.</li>
-  <li>Complete the <a href="start.html">quick start</a>.</li>
-  <li>Copy a pattern from <a href="examples.html">examples</a>.</li>
-  <li>Use the API reference for names and parameters.</li>
+  <li><a href="install.html">Install</a> the package.</li>
+  <li>Work through the <a href="start.html">quick start</a>.</li>
+  <li>Copy a pattern from the <a href="examples.html">examples</a>.</li>
+  <li>Look up names and parameters in the <a href="reference.html">API reference</a>.</li>
 </ol>
 
         <p class="footer-note">hive-tx is MIT licensed.</p>
       </article>
     </main>
   </div>
-  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
+    integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

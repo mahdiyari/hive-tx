@@ -4,7 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>API reference — hive-tx</title>
-  <meta name="description" content="This page lists public exports. TypeScript files in dist give full types.">
+  <meta name="description" content="Every public export and its signature. The type files in dist have the full types.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="API reference — hive-tx">
+  <meta property="og:description" content="Every public export and its signature. The type files in dist have the full types.">
+  <meta property="og:image" content="https://mahdiyari.github.io/hive-tx/assets/cover.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -41,6 +46,7 @@
 <a href="keys.html" data-page="keys">Keys</a>
 <a href="memo.html" data-page="memo">Memos</a>
 <a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="streams.html" data-page="streams">Streams</a>
 <a href="config.html" data-page="config">Configuration</a>
 <a href="utils.html" data-page="utils">Utilities</a>
 <label>Reference</label>
@@ -51,7 +57,7 @@
       <article>
         <p class="kicker">Reference</p>
         <h1>API reference</h1>
-        <p class="lead">This page lists public exports. TypeScript files in dist give full types.</p>
+        <p class="lead">Every public export and its signature. The type files in dist have the full types.</p>
         
 <h2>Exports</h2>
 <pre><code class="language-javascript">import {
@@ -66,8 +72,21 @@
   callWithQuorum,
   RPCError,
   streamBlocks,
+  streamBlockNumbers,
+  streamOperations,
   config,
   utils
+} from 'hive-tx'
+
+import type {
+  Operation,
+  OperationName,
+  OperationBody,
+  TransactionType,
+  BroadcastResult,
+  TransactionStatus,
+  Block,
+  AppliedOperation
 } from 'hive-tx'</code></pre>
 <h2>Transaction</h2>
 <table>
@@ -77,56 +96,145 @@
     <tr><td><code>addOperation(name, body)</code></td><td><code>Promise&lt;void&gt;</code></td></tr>
     <tr><td><code>sign(keys)</code></td><td><code>PrivateKey | PrivateKey[]</code> → <code>TransactionType</code></td></tr>
     <tr><td><code>broadcast(checkStatus?)</code></td><td><code>Promise&lt;BroadcastResult&gt;</code></td></tr>
-    <tr><td><code>digest()</code></td><td><code>{ digest: Uint8Array, txId: string }</code></td></tr>
-    <tr><td><code>addSignature(hex)</code></td><td>130-character hex string</td></tr>
     <tr><td><code>checkStatus()</code></td><td><code>Promise&lt;TransactionStatus&gt;</code></td></tr>
+    <tr><td><code>digest()</code></td><td><code>{ digest: Uint8Array, txId: string }</code></td></tr>
+    <tr><td><code>addSignature(hex)</code></td><td>130-character hex → <code>TransactionType</code></td></tr>
     <tr><td><code>transaction</code></td><td><code>TransactionType | undefined</code></td></tr>
     <tr><td><code>expiration</code></td><td>milliseconds, default 60000</td></tr>
   </tbody>
 </table>
-<h2>BroadcastResult</h2>
-<pre><code class="language-javascript">{
+<pre><code class="language-javascript">BroadcastResult = {
   tx_id: string
   status: 'unknown' | 'within_irreversible_block' | 'expired_irreversible' | 'too_old'
+}
+TransactionStatus = {
+  status: 'unknown' | 'within_mempool' | 'within_reversible_block' | 'within_irreversible_block'
+    | 'expired_reversible' | 'expired_irreversible' | 'too_old'
 }</code></pre>
-<h2>callRPC</h2>
-<p><code>callRPC(method, params?, timeout?, retry?): Promise&lt;T&gt;</code></p>
-<h2>callRPCBatch</h2>
-<p><code>callRPCBatch(method, paramsList, timeout?, retry?): Promise&lt;T[]&gt;</code></p>
-<h2>callWithQuorum</h2>
-<p><code>callWithQuorum(method, params?, quorum?): Promise&lt;T&gt;</code></p>
-<h2>callREST</h2>
-<p><code>callREST(api, endpoint, params?, timeout?, retry?): Promise&lt;...&gt;</code></p>
-<h2>streamBlocks</h2>
-<p><code>streamBlocks({ from?, to? }): AsyncGenerator&lt;Block&gt;</code></p>
-<h2>streamBlockNumbers</h2>
-<p><code>streamBlockNumbers({ from?, to? }): AsyncGenerator&lt;number&gt;</code></p>
-<h2>streamOperations</h2>
-<p><code>streamOperations({ from?, to?, only_virtual? }): AsyncGenerator&lt;AppliedOperation&gt;</code></p>
+<h2>PrivateKey</h2>
+<table>
+  <thead><tr><th>Member</th><th>Type</th></tr></thead>
+  <tbody>
+    <tr><td><code>PrivateKey.from(value)</code></td><td><code>string | Uint8Array</code> → <code>PrivateKey</code></td></tr>
+    <tr><td><code>PrivateKey.fromString(wif)</code></td><td><code>PrivateKey</code></td></tr>
+    <tr><td><code>PrivateKey.fromSeed(seed)</code></td><td><code>string | Uint8Array</code> → <code>PrivateKey</code></td></tr>
+    <tr><td><code>PrivateKey.fromLogin(username, password, role?)</code></td><td>role: <code>'owner' | 'active' | 'posting' | 'memo'</code>, default <code>'active'</code></td></tr>
+    <tr><td><code>PrivateKey.randomKey()</code></td><td><code>PrivateKey</code></td></tr>
+    <tr><td><code>sign(hash)</code></td><td><code>Uint8Array</code> → <code>Signature</code></td></tr>
+    <tr><td><code>createPublic(prefix?)</code></td><td><code>PublicKey</code></td></tr>
+    <tr><td><code>getSharedSecret(publicKey)</code></td><td><code>Uint8Array</code> (64 bytes)</td></tr>
+    <tr><td><code>toString()</code> / <code>inspect()</code></td><td>WIF / masked WIF</td></tr>
+  </tbody>
+</table>
+<h2>PublicKey</h2>
+<table>
+  <thead><tr><th>Member</th><th>Type</th></tr></thead>
+  <tbody>
+    <tr><td><code>PublicKey.from(value)</code></td><td><code>string | PublicKey</code> → <code>PublicKey</code></td></tr>
+    <tr><td><code>PublicKey.fromString(key)</code></td><td><code>PublicKey</code></td></tr>
+    <tr><td><code>verify(hash, signature)</code></td><td><code>Uint8Array, Signature | string</code> → <code>boolean</code></td></tr>
+    <tr><td><code>toString()</code> / <code>toJSON()</code></td><td>Key string with prefix</td></tr>
+  </tbody>
+</table>
+<h2>Signature</h2>
+<table>
+  <thead><tr><th>Member</th><th>Type</th></tr></thead>
+  <tbody>
+    <tr><td><code>Signature.from(hex)</code></td><td><code>Signature</code></td></tr>
+    <tr><td><code>getPublicKey(hash)</code></td><td><code>Uint8Array | string</code> → <code>PublicKey</code></td></tr>
+    <tr><td><code>customToString()</code></td><td>130-character hex</td></tr>
+    <tr><td><code>toBuffer()</code></td><td><code>Uint8Array</code></td></tr>
+  </tbody>
+</table>
 <h2>Memo</h2>
-<p><code>Memo.encode(privateKey, publicKey, memo): string</code></p>
-<p><code>Memo.decode(privateKey, memo): string</code></p>
-<p><code>Memo.encodeForAccount(privateKey, account, memo): Promise&lt;string&gt;</code></p>
+<pre><code class="language-javascript">Memo.encode(privateKey, publicKey, memo): string
+Memo.decode(privateKey, memo): string
+Memo.encodeForAccount(privateKey, account, memo): Promise&lt;string&gt;</code></pre>
+<h2>Calls</h2>
+<pre><code class="language-javascript">callRPC(method, params?, timeout?, retry?): Promise&lt;T&gt;
+callRPCBatch(method, paramsList, timeout?, retry?): Promise&lt;T[]&gt;
+callWithQuorum(method, params?, quorum?): Promise&lt;T&gt;
+callREST(api, endpoint, params?, timeout?, retry?): Promise&lt;typed response&gt;</code></pre>
+<p><code>RPCError</code> extends <code>Error</code> with <code>code: number</code> and <code>data?: any</code>.</p>
+<h2>Streams</h2>
+<pre><code class="language-javascript">streamBlocks({ from?, to? }): AsyncGenerator&lt;Block&gt;
+streamBlockNumbers({ from?, to? }): AsyncGenerator&lt;number&gt;
+streamOperations({ from?, to?, only_virtual? }): AsyncGenerator&lt;AppliedOperation&gt;</code></pre>
+<h2>config</h2>
+<pre><code class="language-javascript">{
+  nodes: string[]
+  restNodes: string[]
+  chain_id: string
+  address_prefix: string
+  timeout: number  // ms
+  retry: number
+}</code></pre>
+<h2>utils</h2>
+<p>Async helpers take an account name or an account object you already fetched.</p>
+<pre><code class="language-javascript">// Stake and price
+parseAsset(asset): { amount: number, symbol: string }
+vestsToHP(vests): Promise&lt;number&gt;
+hpToVests(hp): Promise&lt;number&gt;
+hiveToHbd(hive): Promise&lt;number&gt;
+hbdToHive(hbd): Promise&lt;number&gt;
+getEffectiveVests(account): Promise&lt;number&gt;
+
+// Mana and votes
+getVotingMana(account, now?): Promise&lt;Manabar&gt;
+getDownvoteMana(account, now?): Promise&lt;Manabar&gt;
+getRCMana(account, now?): Promise&lt;Manabar&gt;
+getVoteRShares(account, weight?): Promise&lt;number&gt;
+getVoteValue(account, weight?): Promise&lt;number&gt;
+rsharesToHBD(rshares): Promise&lt;number&gt;
+// Manabar = { current: number, max: number, percentage: number, fullAt: Date }
+
+// Yield, value, reputation
+getHpApr(): Promise&lt;number&gt;
+getHbdApr(): Promise&lt;number&gt;
+estimateAccountValue(account): Promise&lt;number&gt;
+formatReputation(raw): number
+
+// Keys
+createPassword(): string
+generateKeys(username, password): { privateKeys, publicKeys, owner, active, posting, memo_key }
+isValidWif(wif): boolean
+isValidPublicKey(key): boolean
+
+// Social: each returns ['custom_json', body]
+follow(follower, following)       unfollow(follower, following)
+mute(follower, following)         unmute(follower, following)
+blacklist(follower, following)    unblacklist(follower, following)
+followBlacklist(follower, following)  unfollowBlacklist(follower, following)
+followMuted(follower, following)      unfollowMuted(follower, following)
+reblog(account, author, permlink)
+subscribe(account, community)     unsubscribe(account, community)
+
+// Other
+createPermlink(title?): string
+validateUsername(name): string | null
+operations: Record&lt;string, number&gt;
+makeBitMaskFilter(operationIds): filter arguments for get_account_history
+buildWitnessSetProperties(owner, props): ['witness_set_properties', body]</code></pre>
 <h2>Operation names</h2>
-<p>TypeScript accepts Hive operation names as the first argument of <code>addOperation</code>. The body type matches the name. Common names:</p>
+<p><code>addOperation</code> accepts every Hive operation name, and TypeScript checks the body against it. Common ones:</p>
 <ul>
   <li><code>vote</code>, <code>comment</code>, <code>delete_comment</code>, <code>comment_options</code></li>
-  <li><code>transfer</code>, <code>transfer_to_vesting</code>, <code>withdraw_vesting</code></li>
+  <li><code>transfer</code>, <code>transfer_to_vesting</code>, <code>withdraw_vesting</code>, <code>recurrent_transfer</code></li>
   <li><code>custom_json</code>, <code>custom</code></li>
   <li><code>delegate_vesting_shares</code>, <code>claim_reward_balance</code></li>
-  <li><code>account_update</code>, <code>account_update2</code>, <code>account_create</code></li>
-  <li><code>account_witness_vote</code>, <code>account_witness_proxy</code></li>
-  <li><code>recurrent_transfer</code>, <code>witness_update</code>, <code>witness_set_properties</code></li>
+  <li><code>account_update</code>, <code>account_update2</code>, <code>account_create</code>, <code>create_claimed_account</code></li>
+  <li><code>account_witness_vote</code>, <code>account_witness_proxy</code>, <code>witness_update</code>, <code>witness_set_properties</code></li>
 </ul>
-<p>The full list is in <code>src/types.ts</code>.</p>
+<p>The full list is the <code>Operation</code> type in <code>dist/index.d.mts</code>, or <a href="https://github.com/mahdiyari/hive-tx/blob/master/src/types.ts">src/types.ts</a> on GitHub.</p>
 <h2>Support</h2>
-<p>Use the Hive Discord server. The channel is <code>#dev-chat</code>.</p>
+<p>Ask in <code>#dev-chat</code> on the <a href="https://myhive.li/discord">Hive Discord server</a>.</p>
 
         <p class="footer-note">hive-tx is MIT licensed.</p>
       </article>
     </main>
   </div>
-  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
+    integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>

@@ -4,7 +4,12 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>Configuration — hive-tx</title>
-  <meta name="description" content="The config object sets nodes, timeouts, chain id, and the address prefix.">
+  <meta name="description" content="The config object sets the nodes, timeout, retries, chain id, and address prefix.">
+  <meta property="og:type" content="website">
+  <meta property="og:title" content="Configuration — hive-tx">
+  <meta property="og:description" content="The config object sets the nodes, timeout, retries, chain id, and address prefix.">
+  <meta property="og:image" content="https://mahdiyari.github.io/hive-tx/assets/cover.png">
+  <meta name="twitter:card" content="summary_large_image">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Geist+Mono:wght@400;500&display=swap">
   <link rel="stylesheet" href="assets/style.css">
@@ -41,6 +46,7 @@
 <a href="keys.html" data-page="keys">Keys</a>
 <a href="memo.html" data-page="memo">Memos</a>
 <a href="rpc.html" data-page="rpc">RPC and REST</a>
+<a href="streams.html" data-page="streams">Streams</a>
 <a href="config.html" data-page="config" class="current">Configuration</a>
 <a href="utils.html" data-page="utils">Utilities</a>
 <label>Reference</label>
@@ -51,52 +57,39 @@
       <article>
         <p class="kicker">Use</p>
         <h1>Configuration</h1>
-        <p class="lead">The config object sets nodes, timeouts, chain id, and the address prefix.</p>
+        <p class="lead">The config object sets the nodes, timeout, retries, chain id, and address prefix.</p>
         
 <pre><code class="language-javascript">import { config } from 'hive-tx'
 
-config.nodes = [
-  'https://api.hive.blog',
-  'https://api.deathwing.me',
-  'https://api.openhive.network',
-  'https://rpc.mahdiyari.info',
-  'https://techcoderx.com',
-  'https://hiveapi.actifit.io',
-  'https://api.c0ff33a.uk'
-]
-config.restNodes = [
-  'https://api.hive.blog',
-  'https://rpc.mahdiyari.info',
-  'https://techcoderx.com',
-  'https://hiveapi.actifit.io',
-  'https://api.c0ff33a.uk'
-]
-config.timeout = 10_000
-config.retry = 8
-config.address_prefix = 'STM'
-config.chain_id = 'beeab0de00000000000000000000000000000000000000000000000000000000'</code></pre>
+console.log(config.nodes)  // the default public JSON-RPC nodes
+
+config.nodes = ['https://api.hive.blog', 'https://api.deathwing.me']
+config.restNodes = ['https://rpc.mahdiyari.info']
+config.timeout = 5_000
+config.retry = 3</code></pre>
 <table>
-  <thead><tr><th>Field</th><th>Unit</th><th>Default</th></tr></thead>
+  <thead><tr><th>Field</th><th>Type</th><th>Default</th></tr></thead>
   <tbody>
-    <tr><td><code>nodes</code></td><td>URL array</td><td>Public JSON-RPC nodes</td></tr>
-    <tr><td><code>restNodes</code></td><td>URL array with no trailing slash</td><td>Public REST nodes</td></tr>
-    <tr><td><code>timeout</code></td><td>milliseconds</td><td>10000</td></tr>
-    <tr><td><code>retry</code></td><td>count</td><td>8</td></tr>
+    <tr><td><code>nodes</code></td><td>URL array</td><td>Public JSON-RPC nodes, maintained with each release</td></tr>
+    <tr><td><code>restNodes</code></td><td>URL array, no trailing slash</td><td>Public REST nodes, maintained with each release</td></tr>
+    <tr><td><code>timeout</code></td><td>milliseconds</td><td><code>10000</code></td></tr>
+    <tr><td><code>retry</code></td><td>count</td><td><code>8</code></td></tr>
     <tr><td><code>address_prefix</code></td><td>string</td><td><code>STM</code></td></tr>
-    <tr><td><code>chain_id</code></td><td>64 hex characters</td><td>Hive mainnet chain id</td></tr>
+    <tr><td><code>chain_id</code></td><td>64 hex characters</td><td>Hive mainnet: <code>beeab0de00…00</code></td></tr>
   </tbody>
 </table>
+<p>Calls go to the current node and move down the list on failure, wrapping around at the end; they stay on the node that worked. Put your preferred node first. For a testnet, set <code>chain_id</code>, <code>address_prefix</code>, and <code>nodes</code> to the testnet's values; changes apply to the next call and signature.</p>
 <div class="callout caution">
   <strong>Caution</strong>
-  <code>config</code> is global for the process. Concurrent tasks that change <code>config.nodes</code> can select the wrong node. Set the node list once at start.
+  <code>config</code> is global to the process. Set it once at startup; changing <code>config.nodes</code> while calls are in flight can send them to the wrong node.
 </div>
-<p>Timeout and expiration values are in milliseconds in v7. In v6 those values were in seconds.</p>
 
         <p class="footer-note">hive-tx is MIT licensed.</p>
       </article>
     </main>
   </div>
-  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/gh/highlightjs/cdn-release@11.11.1/build/highlight.min.js"
+    integrity="sha384-RH2xi4eIQ/gjtbs9fUXM68sLSi99C7ZWBRX1vDrVv6GQXRibxXLbwO2NGZB74MbU" crossorigin="anonymous"></script>
   <script src="assets/site.js"></script>
 </body>
 </html>
