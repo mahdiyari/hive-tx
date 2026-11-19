@@ -63,8 +63,9 @@ export const validateUsername = (username: string): null | string => {
   return null
 }
 
-/** True if the account exists. Pair it with `validateUsername` on signup. */
+/** True if the account exists; false for names the chain rejects (see `validateUsername`). */
 export const accountExists = async (name: string): Promise<boolean> =>
+  validateUsername(name) === null &&
   (await cachedRPC<unknown[]>('condenser_api.get_accounts', [[name]])).length > 0
 
 /** Account fields used for its profile, from `get_accounts` or `find_accounts` */
