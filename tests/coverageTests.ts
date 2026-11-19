@@ -652,7 +652,8 @@ export const coverageTests = async () => {
       fallback.name === 'Old' &&
       isDeepStrictEqual(broken, {}) &&
       (await utils.accountExists('mahdiyari')) &&
-      !(await utils.accountExists('no-such-acct-zz'))
+      !(await utils.accountExists('no-such-acct-zz')) &&
+      !(await utils.accountExists('a'.repeat(17)))
     )
   })
 
