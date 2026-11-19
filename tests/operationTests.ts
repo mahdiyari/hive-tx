@@ -1,5 +1,5 @@
 import { bytesToHex } from '@noble/hashes/utils.js'
-import { Transaction, callREST, utils } from 'hive-tx'
+import { Transaction, callREST, utils, type CommentOptionsOperation } from 'hive-tx'
 import { getTransactionHex } from './getTransactionHex.js'
 
 // Test public key
@@ -78,7 +78,18 @@ const operationSamples: { [key: string]: any } = {
     account: 'testuser',
     owner: testAuthority,
     active: testAuthority,
-    posting: testAuthority,
+    // Out of order on purpose: nodes sign authorities sorted
+    posting: {
+      weight_threshold: 1,
+      account_auths: [
+        ['bob', 1],
+        ['alice', 1]
+      ],
+      key_auths: [
+        ['STM8m5UgaFAAYQRuaNejYdS8FVLVp9Ss3K1qAVk5de6F8s3HnVbvA', 1],
+        [testKey, 1]
+      ]
+    },
     memo_key: testKey,
     json_metadata: '{"updated2": true}',
     posting_json_metadata: '{"posting": true}',
@@ -152,7 +163,7 @@ const operationSamples: { [key: string]: any } = {
     allow_votes: true,
     allow_curation_rewards: true,
     extensions: [[0, { beneficiaries: [{ account: 'alice', weight: 500 }] }]]
-  },
+  } satisfies CommentOptionsOperation,
   set_withdraw_vesting_route: {
     from_account: 'testuser',
     to_account: 'alice',

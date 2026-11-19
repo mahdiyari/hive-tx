@@ -199,7 +199,7 @@ export interface CommentOptionsOperation {
   percent_hbd: number
   allow_votes: boolean
   allow_curation_rewards: boolean
-  extensions: Array<Array<Beneficiary>>
+  extensions: Array<[0, { beneficiaries: Beneficiary[] }]>
 }
 
 export interface SetWithdrawVestingRouteOperation {
