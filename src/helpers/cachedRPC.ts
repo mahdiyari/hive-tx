@@ -24,3 +24,11 @@ export const cachedRPC = <T = any>(method: string, params: unknown[] | object = 
   result.catch(() => cache.delete(key))
   return result
 }
+
+/** An account object you already have, or the account fetched by name */
+export const fetchAccount = async <T extends object>(account: string | T): Promise<T> => {
+  if (typeof account !== 'string') return account
+  const [found] = await cachedRPC<T[]>('condenser_api.get_accounts', [[account]])
+  if (!found) throw new Error(`Account not found: ${account}`)
+  return found
+}

@@ -106,12 +106,7 @@ const sig = Signature.from(hex)
 const recovered = sig.getPublicKey(messageHash)
 const hexOut = sig.customToString()</code></pre>
 <p><code>getPublicKey</code> takes the 32-byte hash as a <code>Uint8Array</code> or a 64-character hex string.</p>
-<p>To check a Hive Keychain <code>requestSignBuffer</code> proof:</p>
-<ol class="steps">
-  <li>Hash the UTF-8 message with SHA-256.</li>
-  <li>Strip a leading <code>0x</code> from the signature, if present.</li>
-  <li>Compare <code>Signature.from(hex).getPublicKey(hash).toString()</code> with the account's key.</li>
-</ol>
+<p>To check a Hive Keychain <code>requestSignBuffer</code> proof, use <code>utils.verifyMessage</code>; see <a href="utils.html">utilities</a>.</p>
 
         <p class="footer-note">hive-tx is MIT licensed.</p>
       </article>

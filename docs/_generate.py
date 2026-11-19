@@ -141,7 +141,8 @@ PAGES["index"] = (
   <li>Calls typed REST APIs: balance, hafah, hafbe, hivemind, and more.</li>
   <li>Streams irreversible blocks and operations, virtual ones included, with no gaps or duplicates.</li>
   <li>Computes voting mana, RC, Hive Power, vote value, APR, account value, and reputation.</li>
-  <li>Builds follow, mute, reblog, and community operations, permlinks, and account keys.</li>
+  <li>Builds follow, mute, reblog, community, RC delegation, and comment options operations, permlinks, and account keys.</li>
+  <li>Checks, grants, and revokes app authority, and verifies login signatures from Hive Keychain and Hivesigner.</li>
   <li>Creates keys, verifies signatures, and encrypts memos by public key or account name.</li>
 </ul>
 <p>It runs in Node.js, browsers, workers, and serverless runtimes. The package ships ESM and CommonJS builds and has no runtime dependencies: the crypto code is bundled.</p>
@@ -565,12 +566,7 @@ const sig = Signature.from(hex)
 const recovered = sig.getPublicKey(messageHash)
 const hexOut = sig.customToString()</code></pre>
 <p><code>getPublicKey</code> takes the 32-byte hash as a <code>Uint8Array</code> or a 64-character hex string.</p>
-<p>To check a Hive Keychain <code>requestSignBuffer</code> proof:</p>
-<ol class="steps">
-  <li>Hash the UTF-8 message with SHA-256.</li>
-  <li>Strip a leading <code>0x</code> from the signature, if present.</li>
-  <li>Compare <code>Signature.from(hex).getPublicKey(hash).toString()</code> with the account's key.</li>
-</ol>
+<p>To check a Hive Keychain <code>requestSignBuffer</code> proof, use <code>utils.verifyMessage</code>; see <a href="utils.html">utilities</a>.</p>
 """,
 )
 
@@ -770,7 +766,7 @@ PAGES["utils"] = (
     "utils",
     "Utilities",
     "Use",
-    "The utils object has stake and mana math, vote values, reputation, social operations, account keys, permlinks, name validation, history filters, and witness properties.",
+    "The utils object has stake and mana math, vote values, reputation, app authority, login signatures, social operations, comment options, account keys, profiles, permlinks, name validation, history filters, and witness properties.",
     """
 <p>The stake, mana, and vote helpers are async and fetch what they need: the account, global properties, reward fund, and price. That data is cached for 2 seconds and shared between concurrent calls, so several helpers in a row cost one request per kind of data. Results are JavaScript numbers, fine for display and estimates.</p>
 <h2>Voting power and mana</h2>
@@ -816,8 +812,40 @@ await tx.addOperation(...utils.follow('alice', 'bob'))
 //       blacklist, unblacklist: block an account (posts marked "my blacklist")
 //       followBlacklist, unfollowBlacklist, followMuted, unfollowMuted: use another account's lists
 //       reblog(account, author, permlink)
-//       subscribe, unsubscribe(account, 'hive-123456')</code></pre>
+//       subscribe, unsubscribe(account, 'hive-123456')
+//       delegateRC(from, delegatees, maxRc): delegate RC; maxRc 0 removes the delegation</code></pre>
 <p><code>unfollow</code> clears a follow or a mute; removing a blacklist entry needs <code>unblacklist</code>.</p>
+<h2>App authority</h2>
+<p>Lets an app sign for a user, as "Authorize app" flows do. Grant and revoke return an <code>account_update2</code> operation; sign it with the user's active key.</p>
+<pre><code>await utils.hasAccountAuthority('alice', 'myapp')  // posting by default; 'active' as third argument
+
+const tx = new Transaction()
+await tx.addOperation(...(await utils.grantAccountAuthority('alice', 'myapp')))
+// also: revokeAccountAuthority('alice', 'myapp')</code></pre>
+<p>An app counts only if its weight reaches the threshold, so it can sign alone. <code>grantAccountAuthority</code> gives it the threshold weight unless you pass one. <code>revokeAccountAuthority</code> throws if the authority could no longer sign afterwards.</p>
+<h2>Login signatures</h2>
+<p>To prove a user controls an account, have them sign a message with Hive Keychain's <code>requestSignBuffer</code>, Hivesigner, or <code>signMessage</code>, then check it on your server.</p>
+<pre><code>await utils.verifyMessage('alice', message, signature)            // posting key
+await utils.verifyMessage('alice', message, signature, 'active')  // active key
+
+const signature = utils.signMessage(message, PrivateKey.from('5J...posting-key'))
+await utils.getKeyRole('alice', publicKey)  // 'owner' | 'active' | 'posting' | 'memo' | null</code></pre>
+<p>Keep the message on your server with a one-time value, and accept each signature once. The key must be able to sign alone for that authority. <code>getKeyRole</code> tells which role a key holds, for logins with a private key or a master password.</p>
+<h2>Comment options</h2>
+<pre><code>await tx.addOperation('comment', comment)
+await tx.addOperation(...utils.commentOptions('alice', comment.permlink, {
+  beneficiaries: [{ account: 'myapp', weight: 500 }],  // 5%
+  percentHbd: 0                                        // 100% Hive Power
+}))</code></pre>
+<p>Beneficiaries are sorted for you: at most 8, adding up to 10000 or less. <code>maxAcceptedPayout: '0.000 HBD'</code> declines the payout. Add the options in the same transaction as the comment: beneficiaries cannot be set once it has votes.</p>
+<h2>Profiles and accounts</h2>
+<pre><code>await utils.getProfile('alice')        // { name, about, profile_image, ... }
+await utils.accountExists('newuser')  // true or false</code></pre>
+<p><code>getProfile</code> reads <code>posting_json_metadata</code>, then <code>json_metadata</code>. The values are whatever the user wrote, so check their types before you use them.</p>
+<h2>getRequiredRole</h2>
+<pre><code>utils.getRequiredRole(['vote', vote])          // 'posting'
+utils.getRequiredRole(['transfer', transfer])  // 'active'</code></pre>
+<p>Returns the key role the chain requires for an operation: <code>'posting'</code>, <code>'active'</code>, or <code>'owner'</code>. It throws for <code>witness_set_properties</code>, which is signed with the witness signing key.</p>
 <h2>Account keys</h2>
 <pre><code>const password = utils.createPassword()  // 'P5...', show it to the user once
 const { privateKeys, owner, active, posting, memo_key } = utils.generateKeys('newuser', password)
@@ -1096,6 +1124,14 @@ createPassword(): string
 generateKeys(username, password): { privateKeys, publicKeys, owner, active, posting, memo_key }
 isValidWif(wif): boolean
 isValidPublicKey(key): boolean
+getKeyRole(account, publicKey): Promise&lt;'owner' | 'active' | 'posting' | 'memo' | null&gt;
+signMessage(message, privateKey): string
+verifyMessage(account, message, signature, role?): Promise&lt;boolean&gt;
+
+// App authority: role is 'posting' (default) or 'active'
+hasAccountAuthority(account, app, role?): Promise&lt;boolean&gt;
+grantAccountAuthority(account, app, role?, weight?): Promise&lt;['account_update2', body]&gt;
+revokeAccountAuthority(account, app, role?): Promise&lt;['account_update2', body]&gt;
 
 // Social: each returns ['custom_json', body]
 follow(follower, following)       unfollow(follower, following)
@@ -1105,10 +1141,15 @@ followBlacklist(follower, following)  unfollowBlacklist(follower, following)
 followMuted(follower, following)      unfollowMuted(follower, following)
 reblog(account, author, permlink)
 subscribe(account, community)     unsubscribe(account, community)
+delegateRC(from, delegatees, maxRc)
 
 // Other
 createPermlink(title?): string
+commentOptions(author, permlink, options?): ['comment_options', body]
 validateUsername(name): string | null
+accountExists(name): Promise&lt;boolean&gt;
+getProfile(account): Promise&lt;Record&lt;string, unknown&gt;&gt;
+getRequiredRole(operation): 'posting' | 'active' | 'owner'
 operations: Record&lt;string, number&gt;
 makeBitMaskFilter(operationIds): filter arguments for get_account_history
 buildWitnessSetProperties(owner, props): ['witness_set_properties', body]</code></pre>

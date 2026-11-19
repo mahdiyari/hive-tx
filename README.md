@@ -9,14 +9,15 @@
 [![Node.js](https://img.shields.io/badge/Node.js-%3E%3D20-green.svg)](https://nodejs.org/)
 [![Bundlejs](https://deno.bundlejs.com/badge?q=hive-tx@latest)](https://bundlejs.com/?q=hive-tx@latest)
 
-Lightweight TypeScript SDK for the Hive blockchain. No runtime dependencies, ~34 KB minified and gzipped. Works in Node.js, browsers, workers, and serverless runtimes.
+Lightweight TypeScript SDK for the Hive blockchain. No runtime dependencies, ~35 KB minified and gzipped. Works in Node.js, browsers, workers, and serverless runtimes.
 
 - Build, sign, and broadcast transactions, typed per operation
 - JSON-RPC with automatic node failover, batch requests, and quorum calls that cross-check nodes
 - Typed REST APIs: balance, hafah, hafbe, hivemind, and more
 - Gap-free streams of blocks, block numbers, and operations (virtual included)
 - Helpers for voting power, mana, RC, Hive Power, vote value, APR, account value, and reputation
-- Builders for follow, mute, reblog, and community operations; permlinks; account keys
+- Builders for follow, mute, reblog, community, RC delegation, and comment options with beneficiaries; permlinks; account keys
+- App authority checks and grants, and login signature verification (Hive Keychain, Hivesigner)
 - Keys, signatures, and encrypted memos (by public key or account name)
 
 ## Install
