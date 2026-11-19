@@ -16,6 +16,9 @@ import { DigestData } from './types.js'
 import { sleep } from './helpers/sleep.js'
 import { cachedRPC } from './helpers/cachedRPC.js'
 
+/** Chain times are UTC without the "Z" */
+const chainTime = (time: string) => new Date(time + 'Z').getTime()
+
 interface TransactionOptions {
   transaction?: TransactionType | Transaction
   /**
@@ -128,10 +131,12 @@ export class Transaction {
     if (!checkStatus) {
       return { tx_id: this.txId, status: 'unknown' }
     }
+    // Time left until expiration on the chain's clock; the local clock may be off
+    const { time } = await cachedRPC('condenser_api.get_dynamic_global_properties')
+    const deadline = Date.now() + chainTime(this.transaction.expiration) - chainTime(time)
     await sleep(1000)
     let status = await this.checkStatus()
     let i = 1
-    const expiration = new Date(this.transaction?.expiration).getTime()
     while (
       status?.status !== 'within_irreversible_block' &&
       status?.status !== 'expired_irreversible' &&
@@ -140,7 +145,7 @@ export class Transaction {
       await sleep(1000 + i * 300)
       status = await this.checkStatus()
       i++
-      if (Date.now() >= expiration) {
+      if (Date.now() >= deadline) {
         return { tx_id: this.txId, status: 'unknown' }
       }
     }
@@ -213,7 +218,8 @@ export class Transaction {
     const props = await cachedRPC('condenser_api.get_dynamic_global_properties')
     const bytes = hexToBytes(props.head_block_id)
     const refBlockPrefix = Number(new Uint32Array(bytes.buffer, bytes.byteOffset + 4, 1)[0])
-    const expirationIso = new Date(Date.now() + expiration).toISOString().slice(0, -5)
+    // From chain time, so a wrong local clock cannot make the transaction expired on arrival
+    const expirationIso = new Date(chainTime(props.time) + expiration).toISOString().slice(0, -5)
     this.transaction = {
       expiration: expirationIso,
       extensions: [],
