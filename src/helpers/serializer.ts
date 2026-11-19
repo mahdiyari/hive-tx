@@ -192,7 +192,10 @@ const VariableBinarySerializer = BinarySerializer()
 const FlatMapSerializer = (keySerializer: any, valueSerializer: any) => {
   return (buffer: ByteBuffer, data: any) => {
     buffer.writeVarint32(data.length)
-    for (const [key, value] of data) {
+    // Nodes sign flat_maps sorted by key, whatever the order in the JSON. Public keys sort as
+    // strings too: they all have the same length and base58 digits are in ASCII order.
+    const sorted = [...data].sort(([a], [b]) => (String(a) < String(b) ? -1 : 1))
+    for (const [key, value] of sorted) {
       keySerializer(buffer, key)
       valueSerializer(buffer, value)
     }
