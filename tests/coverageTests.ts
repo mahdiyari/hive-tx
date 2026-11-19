@@ -570,6 +570,24 @@ export const coverageTests = async () => {
     return signed.signatures.includes(paddedSig)
   })
 
+  await runTest('Transaction expiration counts from chain time, not the local clock', async () => {
+    const realNow = Date.now
+    Date.now = () => realNow() - 3_600_000 // a clock an hour slow
+    const trx = new Transaction()
+    try {
+      await trx.addOperation('vote', { voter: 'testuser', author: 'a', permlink: 'b', weight: 1 })
+    } finally {
+      Date.now = realNow
+    }
+    // The head block the transaction references holds the chain time it was built at
+    const { head_block_number } = await callRPC('condenser_api.get_dynamic_global_properties')
+    const refBlock =
+      head_block_number - ((head_block_number - trx.transaction!.ref_block_num) & 0xffff)
+    const { timestamp } = await callRPC('condenser_api.get_block_header', [refBlock])
+    const expected = new Date(new Date(timestamp + 'Z').getTime() + 60_000)
+    return trx.transaction!.expiration === expected.toISOString().slice(0, -5)
+  })
+
   console.log('Testing API calls...')
 
   await runTest('callRPC(condenser_api.get_accounts)', async () => {
