@@ -1,7 +1,7 @@
 import { CustomJsonOperation } from '../types.js'
 
 /**
- * Builders for the social `custom_json` operations that Hivemind reads.
+ * Builders for the social and RC `custom_json` operations.
  * Each returns an operation to pass to `addOperation`:
  * `await tx.addOperation(...utils.follow('alice', 'bob'))`
  */
@@ -66,3 +66,7 @@ export const subscribe = (account: string, community: string) =>
 /** `account` unsubscribes from a community */
 export const unsubscribe = (account: string, community: string) =>
   customJson('community', account, ['unsubscribe', { community }])
+
+/** `from` delegates `maxRc` resource credits to each delegatee; 0 removes the delegation */
+export const delegateRC = (from: string, delegatees: string[], maxRc: number) =>
+  customJson('rc', from, ['delegate_rc', { from, delegatees, max_rc: maxRc, extensions: [] }])

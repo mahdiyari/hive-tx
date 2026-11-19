@@ -1,4 +1,4 @@
-import { cachedRPC } from './cachedRPC.js'
+import { cachedRPC, fetchAccount } from './cachedRPC.js'
 
 /**
  * Stake, mana, vote, and reputation math. Account helpers take a name, or an account object
@@ -57,13 +57,6 @@ export interface Manabar {
   percentage: number
   /** When the mana will be full; already passed if it is full */
   fullAt: Date
-}
-
-const fetchAccount = async <T extends StakeAccount>(account: string | T): Promise<T> => {
-  if (typeof account !== 'string') return account
-  const [found] = await cachedRPC<T[]>('condenser_api.get_accounts', [[account]])
-  if (!found) throw new Error(`Account not found: ${account}`)
-  return found
 }
 
 const fetchRCAccount = async (account: RCAccountInput): Promise<RCAccount> => {

@@ -199,6 +199,14 @@ createPassword(): string
 generateKeys(username, password): { privateKeys, publicKeys, owner, active, posting, memo_key }
 isValidWif(wif): boolean
 isValidPublicKey(key): boolean
+getKeyRole(account, publicKey): Promise&lt;'owner' | 'active' | 'posting' | 'memo' | null&gt;
+signMessage(message, privateKey): string
+verifyMessage(account, message, signature, role?): Promise&lt;boolean&gt;
+
+// App authority: role is 'posting' (default) or 'active'
+hasAccountAuthority(account, app, role?): Promise&lt;boolean&gt;
+grantAccountAuthority(account, app, role?, weight?): Promise&lt;['account_update2', body]&gt;
+revokeAccountAuthority(account, app, role?): Promise&lt;['account_update2', body]&gt;
 
 // Social: each returns ['custom_json', body]
 follow(follower, following)       unfollow(follower, following)
@@ -208,10 +216,15 @@ followBlacklist(follower, following)  unfollowBlacklist(follower, following)
 followMuted(follower, following)      unfollowMuted(follower, following)
 reblog(account, author, permlink)
 subscribe(account, community)     unsubscribe(account, community)
+delegateRC(from, delegatees, maxRc)
 
 // Other
 createPermlink(title?): string
+commentOptions(author, permlink, options?): ['comment_options', body]
 validateUsername(name): string | null
+accountExists(name): Promise&lt;boolean&gt;
+getProfile(account): Promise&lt;Record&lt;string, unknown&gt;&gt;
+getRequiredRole(operation): 'posting' | 'active' | 'owner'
 operations: Record&lt;string, number&gt;
 makeBitMaskFilter(operationIds): filter arguments for get_account_history
 buildWitnessSetProperties(owner, props): ['witness_set_properties', body]</code></pre>

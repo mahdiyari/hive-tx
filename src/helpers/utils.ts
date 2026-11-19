@@ -2,8 +2,15 @@ import { Serializer } from './serializer.js'
 import { ByteBuffer } from './ByteBuffer.js'
 import { PublicKey } from './PublicKey.js'
 import { bytesToHex, randomBytes } from '@noble/hashes/utils.js'
-import type { WitnessSetPropertiesOperation } from '../types.js'
+import { cachedRPC, fetchAccount } from './cachedRPC.js'
+import type {
+  Beneficiary,
+  CommentOptionsOperation,
+  Operation,
+  WitnessSetPropertiesOperation
+} from '../types.js'
 
+export * from './authority.js'
 export * from './chainMath.js'
 export * from './keys.js'
 export * from './social.js'
@@ -54,6 +61,69 @@ export const validateUsername = (username: string): null | string => {
     }
   }
   return null
+}
+
+/** True if the account exists. Pair it with `validateUsername` on signup. */
+export const accountExists = async (name: string): Promise<boolean> =>
+  (await cachedRPC<unknown[]>('condenser_api.get_accounts', [[name]])).length > 0
+
+/** Account fields used for its profile, from `get_accounts` or `find_accounts` */
+export interface ProfileAccount {
+  json_metadata: string
+  posting_json_metadata: string
+}
+
+/**
+ * The profile an account set (name, about, profile_image, cover_image, location, website...),
+ * from posting_json_metadata, else json_metadata, else `{}`. Values are user-written and unchecked.
+ */
+export const getProfile = async (
+  account: string | ProfileAccount
+): Promise<Record<string, unknown>> => {
+  const acc = await fetchAccount(account)
+  return readProfile(acc.posting_json_metadata) ?? readProfile(acc.json_metadata) ?? {}
+}
+
+const readProfile = (json: string): Record<string, unknown> | undefined => {
+  try {
+    const profile = JSON.parse(json)?.profile
+    return profile && typeof profile === 'object' && !Array.isArray(profile) ? profile : undefined
+  } catch {
+    return undefined
+  }
+}
+
+/**
+ * The key role the chain requires to sign `operation`.
+ * `witness_set_properties` throws: it is signed with the witness signing key, not an account key.
+ */
+export const getRequiredRole = ([name, body]: Operation): 'posting' | 'active' | 'owner' => {
+  switch (name) {
+    case 'vote':
+    case 'comment':
+    case 'comment_options':
+    case 'delete_comment':
+    case 'claim_reward_balance':
+      return 'posting'
+    case 'custom_json':
+      return body.required_auths.length ? 'active' : 'posting'
+    case 'account_update':
+      return body.owner ? 'owner' : 'active'
+    case 'account_update2':
+      if (body.owner) return 'owner'
+      // Only posting_json_metadata changes need just the posting key
+      return body.active || body.posting || body.memo_key || body.json_metadata
+        ? 'active'
+        : 'posting'
+    case 'change_recovery_account':
+    case 'decline_voting_rights':
+    case 'recover_account':
+      return 'owner'
+    case 'witness_set_properties':
+      throw new Error('witness_set_properties is signed with the witness signing key')
+    default:
+      return 'active'
+  }
 }
 
 export const operations = {
@@ -236,4 +306,53 @@ export const createPermlink = (title = ''): string => {
     .replace(/^-+|-+$/g, '')
   const suffix = bytesToHex(randomBytes(6))
   return slug ? `${slug}-${suffix}` : suffix
+}
+
+export interface CommentOptions {
+  beneficiaries?: Beneficiary[]
+  /** Default `'1000000.000 HBD'`; `'0.000 HBD'` declines the payout */
+  maxAcceptedPayout?: string
+  /** HBD share of the liquid payout: 10000 (default) is 50% HBD, 0 is 100% Hive Power */
+  percentHbd?: number
+  allowVotes?: boolean
+  allowCurationRewards?: boolean
+}
+
+// shortcut: limit hardcoded as of HF28; update it if a hardfork changes HIVE_MAX_COMMENT_BENEFICIARIES
+const MAX_BENEFICIARIES = 8
+
+/**
+ * Builds `comment_options` for a post or comment, sorting beneficiaries as the chain requires.
+ * Add it in the same transaction as the `comment`: beneficiaries cannot be set once it has votes.
+ */
+export const commentOptions = (
+  author: string,
+  permlink: string,
+  {
+    beneficiaries = [],
+    maxAcceptedPayout = '1000000.000 HBD',
+    percentHbd = 10000,
+    allowVotes = true,
+    allowCurationRewards = true
+  }: CommentOptions = {}
+): ['comment_options', CommentOptionsOperation] => {
+  if (beneficiaries.length > MAX_BENEFICIARIES) {
+    throw new Error(`At most ${MAX_BENEFICIARIES} beneficiaries`)
+  }
+  if (beneficiaries.reduce((sum, b) => sum + b.weight, 0) > 10000) {
+    throw new Error('Beneficiary weights add up to more than 10000 (100%)')
+  }
+  const sorted = [...beneficiaries].sort((a, b) => (a.account < b.account ? -1 : 1))
+  return [
+    'comment_options',
+    {
+      author,
+      permlink,
+      max_accepted_payout: maxAcceptedPayout,
+      percent_hbd: percentHbd,
+      allow_votes: allowVotes,
+      allow_curation_rewards: allowCurationRewards,
+      extensions: sorted.length ? [[0, { beneficiaries: sorted }]] : []
+    }
+  ]
 }

@@ -16,7 +16,8 @@ import {
   streamOperations,
   type AppliedOperation,
   type Block,
-  type Operation
+  type Operation,
+  type AccountUpdate2Operation
 } from 'hive-tx'
 
 // Test data
@@ -502,6 +503,8 @@ export const coverageTests = async () => {
       json(utils.subscribe('a', 'hive-1')) === 'community ["subscribe",{"community":"hive-1"}]' &&
       json(utils.unsubscribe('a', 'hive-1')) ===
         'community ["unsubscribe",{"community":"hive-1"}]' &&
+      json(utils.delegateRC('a', ['b'], 5)) ===
+        'rc ["delegate_rc",{"from":"a","delegatees":["b"],"max_rc":5,"extensions":[]}]' &&
       utils.follow('a', 'b')[1].required_posting_auths[0] === 'a'
     )
   })
@@ -523,6 +526,160 @@ export const coverageTests = async () => {
       utils.isValidPublicKey(pub) &&
       !utils.isValidPublicKey(corrupted) &&
       !utils.isValidPublicKey('junk')
+    )
+  })
+
+  const throws = (fn: () => unknown) => {
+    try {
+      fn()
+      return false
+    } catch {
+      return true
+    }
+  }
+  // Keys from generateKeys, one app on posting, and an app with half the active threshold
+  const appKeys = utils.generateKeys('alice', 'P5Kexample')
+  const appAccount: utils.AuthorityAccount & utils.ProfileAccount = {
+    name: 'alice',
+    owner: appKeys.owner,
+    active: {
+      weight_threshold: 2,
+      account_auths: [['half.app', 1]],
+      key_auths: [[appKeys.publicKeys.active, 2]]
+    },
+    posting: { ...appKeys.posting, account_auths: [['zed.app', 1]] },
+    memo_key: appKeys.memo_key,
+    json_metadata: '{"profile":{"name":"Old"}}',
+    posting_json_metadata: '{"profile":{"name":"Alice"}}'
+  }
+
+  await runTest('utils app authority helpers', async () => {
+    const [, grant] = await utils.grantAccountAuthority(appAccount, 'app')
+    const [, regrant] = await utils.grantAccountAuthority(appAccount, 'half.app', 'active')
+    const [, revoke] = await utils.revokeAccountAuthority(appAccount, 'zed.app')
+    const appOnly: utils.AuthorityAccount['posting'] = {
+      weight_threshold: 1,
+      account_auths: [['only.app', 1]],
+      key_auths: []
+    }
+    const lockout = await utils
+      .revokeAccountAuthority({ ...appAccount, posting: appOnly }, 'only.app')
+      .catch((e) => e.message)
+    return (
+      (await utils.hasAccountAuthority(appAccount, 'zed.app')) &&
+      // weight 1 of 2
+      !(await utils.hasAccountAuthority(appAccount, 'half.app', 'active')) &&
+      !(await utils.hasAccountAuthority(appAccount, 'app')) &&
+      isDeepStrictEqual(grant.posting?.account_auths, [
+        ['app', 1],
+        ['zed.app', 1]
+      ]) &&
+      grant.active === undefined &&
+      grant.json_metadata === '' &&
+      isDeepStrictEqual(regrant.active?.account_auths, [['half.app', 2]]) &&
+      isDeepStrictEqual(revoke.posting?.account_auths, []) &&
+      revoke.posting?.key_auths.length === 1 &&
+      lockout === 'Removing only.app would leave the posting authority of alice unable to sign' &&
+      // the account passed in is left as is
+      appAccount.posting.account_auths.length === 1
+    )
+  })
+
+  await runTest('utils key roles and message signatures', async () => {
+    const posting = PrivateKey.fromLogin('alice', 'P5Kexample', 'posting')
+    const message = 'Log in to example.app: 4f2a'
+    const signature = utils.signMessage(message, posting)
+    return (
+      (await utils.getKeyRole(appAccount, appKeys.publicKeys.owner)) === 'owner' &&
+      (await utils.getKeyRole(appAccount, appKeys.publicKeys.active)) === 'active' &&
+      (await utils.getKeyRole(appAccount, posting.createPublic())) === 'posting' &&
+      (await utils.getKeyRole(appAccount, appKeys.publicKeys.memo)) === 'memo' &&
+      (await utils.getKeyRole(appAccount, PrivateKey.randomKey().createPublic())) === null &&
+      signature.length === 130 &&
+      (await utils.verifyMessage(appAccount, message, signature)) &&
+      (await utils.verifyMessage(appAccount, message, '0x' + signature)) &&
+      !(await utils.verifyMessage(appAccount, message + '!', signature)) &&
+      !(await utils.verifyMessage(appAccount, message, signature, 'active')) &&
+      !(await utils.verifyMessage(appAccount, message, 'junk'))
+    )
+  })
+
+  await runTest('utils.commentOptions', () => {
+    const [, options] = utils.commentOptions('alice', 'post', {
+      beneficiaries: [
+        { account: 'zed', weight: 500 },
+        { account: 'bob', weight: 1000 }
+      ],
+      percentHbd: 0
+    })
+    const [, plain] = utils.commentOptions('alice', 'post')
+    const nine = Array.from({ length: 9 }, (_, i) => ({ account: `user${i}`, weight: 1 }))
+    return (
+      isDeepStrictEqual(options.extensions, [
+        [
+          0,
+          {
+            beneficiaries: [
+              { account: 'bob', weight: 1000 },
+              { account: 'zed', weight: 500 }
+            ]
+          }
+        ]
+      ]) &&
+      options.percent_hbd === 0 &&
+      plain.max_accepted_payout === '1000000.000 HBD' &&
+      plain.percent_hbd === 10000 &&
+      plain.allow_votes &&
+      plain.extensions.length === 0 &&
+      throws(() => utils.commentOptions('a', 'p', { beneficiaries: nine })) &&
+      throws(() =>
+        utils.commentOptions('a', 'p', { beneficiaries: [{ account: 'b', weight: 10001 }] })
+      )
+    )
+  })
+
+  await runTest('utils.getProfile and utils.accountExists', async () => {
+    const fallback = await utils.getProfile({
+      json_metadata: '{"profile":{"name":"Old"}}',
+      posting_json_metadata: ''
+    })
+    const broken = await utils.getProfile({
+      json_metadata: '{',
+      posting_json_metadata: '{"profile":[1]}'
+    })
+    return (
+      (await utils.getProfile(appAccount)).name === 'Alice' &&
+      fallback.name === 'Old' &&
+      isDeepStrictEqual(broken, {}) &&
+      (await utils.accountExists('mahdiyari')) &&
+      !(await utils.accountExists('no-such-acct-zz'))
+    )
+  })
+
+  await runTest('utils.getRequiredRole', async () => {
+    const role = utils.getRequiredRole
+    const metadataOnly: AccountUpdate2Operation = {
+      account: 'a',
+      json_metadata: '',
+      posting_json_metadata: '{}',
+      extensions: []
+    }
+    return (
+      role(['vote', { voter: 'a', author: 'b', permlink: 'c', weight: 1 }]) === 'posting' &&
+      role(['transfer', { from: 'a', to: 'b', amount: '1.000 HIVE', memo: '' }]) === 'active' &&
+      role(utils.follow('a', 'b')) === 'posting' &&
+      role([
+        'custom_json',
+        { required_auths: ['a'], required_posting_auths: [], id: 'x', json: '1' }
+      ]) === 'active' &&
+      role(['account_update2', metadataOnly]) === 'posting' &&
+      role(await utils.grantAccountAuthority(appAccount, 'app')) === 'active' &&
+      role(['account_update2', { ...metadataOnly, owner: appKeys.owner }]) === 'owner' &&
+      role([
+        'change_recovery_account',
+        { account_to_recover: 'a', new_recovery_account: 'b', extensions: [] }
+      ]) === 'owner' &&
+      throws(() => role(utils.buildWitnessSetProperties('w', { key: appKeys.publicKeys.active })))
     )
   })
 
