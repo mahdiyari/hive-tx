@@ -728,6 +728,38 @@ export const coverageTests = async () => {
     return signed.signatures.includes(paddedSig)
   })
 
+  await runTest('Transaction rejects dates nodes cannot parse ("Z" suffix, Date objects)', () => {
+    const order = (expiration: string) =>
+      new Transaction({
+        transaction: {
+          ref_block_num: 1,
+          ref_block_prefix: 2,
+          expiration: '2030-01-01T00:00:00',
+          operations: [
+            [
+              'limit_order_create',
+              {
+                owner: 'a',
+                orderid: 1,
+                amount_to_sell: '1.000 HIVE',
+                min_to_receive: '1.000 HBD',
+                fill_or_kill: false,
+                expiration
+              }
+            ]
+          ],
+          extensions: [],
+          signatures: []
+        }
+      })
+    return (
+      !throws(() => order('2030-01-01T00:00:00')) &&
+      throws(() => order('2030-01-01T00:00:00Z')) &&
+      // Old types allowed Date; JS callers can still pass one
+      throws(() => order(new Date() as unknown as string))
+    )
+  })
+
   await runTest('Transaction expiration counts from chain time, not the local clock', async () => {
     const realNow = Date.now
     Date.now = () => realNow() - 3_600_000 // a clock an hour slow

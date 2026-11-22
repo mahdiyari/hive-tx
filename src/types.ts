@@ -272,7 +272,7 @@ export interface LimitOrderCreateOperation {
   amount_to_sell: Asset | string
   min_to_receive: Asset | string
   fill_or_kill: boolean
-  expiration: string | Date
+  expiration: string
 }
 
 export interface LimitOrderCreate2Operation {
@@ -281,7 +281,7 @@ export interface LimitOrderCreate2Operation {
   amount_to_sell: Asset | string
   fill_or_kill: boolean
   exchange_rate: Price
-  expiration: string | Date
+  expiration: string
 }
 
 export interface LimitOrderCancelOperation {
@@ -303,8 +303,8 @@ export interface EscrowTransferOperation {
   agent: string
   fee: Asset | string
   json_meta: string
-  ratification_deadline: string | Date
-  escrow_expiration: string | Date
+  ratification_deadline: string
+  escrow_expiration: string
 }
 
 export interface EscrowDisputeOperation {
@@ -375,8 +375,8 @@ export interface RecurrentTransferOperation {
 export interface CreateProposalOperation {
   creator: string
   receiver: string
-  start_date: string | Date
-  end_date: string | Date
+  start_date: string
+  end_date: string
   daily_pay: Asset | string
   subject: string
   permlink: string
@@ -389,7 +389,7 @@ export interface UpdateProposalOperation {
   daily_pay: Asset | string
   subject: string
   permlink: string
-  extensions: Array<Array<{ end_date: string | Date }>>
+  extensions: Array<[1, { end_date: string }]>
 }
 
 export interface UpdateProposalVotesOperation {
