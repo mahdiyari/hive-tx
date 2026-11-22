@@ -163,7 +163,7 @@ const AssetSerializer = (buffer: ByteBuffer, data: string | Asset) => {
 }
 
 const DateSerializer = (buffer: ByteBuffer, data: string) => {
-  // Nodes reject "Z" suffixes and Date objects, so fail here instead of signing another time
+  // addOperation converts Date and zoned strings; a raw transaction must already use chain time
   if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?$/.test(data)) {
     throw new Error(`Invalid date ${JSON.stringify(data)}, expected UTC "YYYY-MM-DDTHH:MM:SS"`)
   }

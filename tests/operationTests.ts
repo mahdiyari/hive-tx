@@ -230,7 +230,8 @@ const operationSamples: { [key: string]: any } = {
     amount_to_sell: '10.000 HIVE',
     min_to_receive: '1.000 HBD',
     fill_or_kill: false,
-    expiration: new Date(Date.now() + 86400000).toISOString().slice(0, -5)
+    // addOperation converts Dates and zoned strings to chain time
+    expiration: new Date(Date.now() + 86400000)
   },
   limit_order_create2: {
     owner: 'testuser',
@@ -263,8 +264,8 @@ const operationSamples: { [key: string]: any } = {
     agent: 'bob',
     fee: '0.100 HIVE',
     json_meta: '{}',
-    ratification_deadline: new Date(Date.now() + 86400000).toISOString().slice(0, -5),
-    escrow_expiration: new Date(Date.now() + 172800000).toISOString().slice(0, -5)
+    ratification_deadline: new Date(Date.now() + 86400000).toISOString(),
+    escrow_expiration: new Date(Date.now() + 172800000).toISOString().replace('Z', '+00:00')
   },
   escrow_dispute: {
     from: 'testuser',
@@ -333,7 +334,7 @@ const operationSamples: { [key: string]: any } = {
     daily_pay: '2.000 HBD',
     subject: 'Updated Proposal',
     permlink: 'test-proposal-124',
-    extensions: [[1, { end_date: new Date(Date.now() + 1209600000).toISOString().slice(0, -5) }]]
+    extensions: [[1, { end_date: new Date(Date.now() + 1209600000) }]]
   },
   update_proposal_votes: {
     voter: 'bob',

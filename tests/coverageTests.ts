@@ -728,8 +728,8 @@ export const coverageTests = async () => {
     return signed.signatures.includes(paddedSig)
   })
 
-  await runTest('Transaction rejects dates nodes cannot parse ("Z" suffix, Date objects)', () => {
-    const order = (expiration: string) =>
+  await runTest('Prebuilt transactions reject dates nodes cannot parse ("Z", Date)', () => {
+    const order = (expiration: string | Date) =>
       new Transaction({
         transaction: {
           ref_block_num: 1,
@@ -755,8 +755,7 @@ export const coverageTests = async () => {
     return (
       !throws(() => order('2030-01-01T00:00:00')) &&
       throws(() => order('2030-01-01T00:00:00Z')) &&
-      // Old types allowed Date; JS callers can still pass one
-      throws(() => order(new Date() as unknown as string))
+      throws(() => order(new Date()))
     )
   })
 
