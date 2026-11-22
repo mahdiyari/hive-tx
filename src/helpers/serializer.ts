@@ -144,13 +144,18 @@ const StaticVariantSerializer = (itemSerializers: any) => {
 
 /**
  * Serialize asset.
- * @note This looses precision for amounts larger than 2^53-1/10^precision.
- *       Should not be a problem in real-word usage.
+ * @note Number and Asset inputs lose precision for amounts larger than 2^53-1/10^precision
+ *       (VESTS above ~9e9). Strings with the right decimal places are exact.
  */
 const AssetSerializer = (buffer: ByteBuffer, data: string | Asset) => {
   const asset = Asset.from(data)
   const precision = asset.getPrecision()
-  buffer.writeInt64(Math.round(asset.amount * Math.pow(10, precision)))
+  const [whole, fraction = ''] = typeof data === 'string' ? data.split(' ')[0].split('.') : []
+  buffer.writeInt64(
+    fraction.length === precision
+      ? BigInt(whole + fraction)
+      : Math.round(asset.amount * Math.pow(10, precision))
+  )
   buffer.writeUint8(precision)
   for (let i = 0; i < 7; i++) {
     buffer.writeUint8(asset.symbol.charCodeAt(i) || 0)
@@ -158,6 +163,10 @@ const AssetSerializer = (buffer: ByteBuffer, data: string | Asset) => {
 }
 
 const DateSerializer = (buffer: ByteBuffer, data: string) => {
+  // addOperation converts Date and zoned strings; a raw transaction must already use chain time
+  if (!/^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d(\.\d+)?$/.test(data)) {
+    throw new Error(`Invalid date ${JSON.stringify(data)}, expected UTC "YYYY-MM-DDTHH:MM:SS"`)
+  }
   buffer.writeUint32(Math.floor(new Date(data + 'Z').getTime() / 1000))
 }
 
@@ -215,7 +224,8 @@ const ObjectSerializer = (keySerializers: any) => {
   return (buffer: ByteBuffer, data: any) => {
     for (const [key, serializer] of keySerializers) {
       try {
-        serializer(buffer, data[key])
+        // Nodes default a missing extensions to []
+        serializer(buffer, key === 'extensions' ? (data[key] ?? []) : data[key])
       } catch (error: any) {
         error.message = `${key}: ${error.message}`
         throw error

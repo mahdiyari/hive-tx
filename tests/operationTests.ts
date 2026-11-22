@@ -42,7 +42,8 @@ const operationSamples: { [key: string]: any } = {
   },
   withdraw_vesting: {
     account: 'testuser',
-    vesting_shares: '1000.000000 VESTS'
+    // Above 2^53 base units: a float would drop the last digit
+    vesting_shares: '123456789012.345677 VESTS'
   },
   account_create: {
     fee: '3.000 HIVE',
@@ -229,7 +230,8 @@ const operationSamples: { [key: string]: any } = {
     amount_to_sell: '10.000 HIVE',
     min_to_receive: '1.000 HBD',
     fill_or_kill: false,
-    expiration: new Date(Date.now() + 86400000).toISOString().slice(0, -5)
+    // addOperation converts Dates and zoned strings to chain time
+    expiration: new Date(Date.now() + 86400000)
   },
   limit_order_create2: {
     owner: 'testuser',
@@ -262,8 +264,8 @@ const operationSamples: { [key: string]: any } = {
     agent: 'bob',
     fee: '0.100 HIVE',
     json_meta: '{}',
-    ratification_deadline: new Date(Date.now() + 86400000).toISOString().slice(0, -5),
-    escrow_expiration: new Date(Date.now() + 172800000).toISOString().slice(0, -5)
+    ratification_deadline: new Date(Date.now() + 86400000).toISOString(),
+    escrow_expiration: new Date(Date.now() + 172800000).toISOString().replace('Z', '+00:00')
   },
   escrow_dispute: {
     from: 'testuser',
@@ -332,13 +334,13 @@ const operationSamples: { [key: string]: any } = {
     daily_pay: '2.000 HBD',
     subject: 'Updated Proposal',
     permlink: 'test-proposal-124',
-    extensions: []
+    extensions: [[1, { end_date: new Date(Date.now() + 1209600000) }]]
   },
   update_proposal_votes: {
     voter: 'bob',
     proposal_ids: [1, 2, 3],
     approve: true,
-    extensions: []
+    // extensions omitted: nodes default it to []
   },
   remove_proposal: {
     proposal_owner: 'testuser',

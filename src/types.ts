@@ -389,7 +389,7 @@ export interface UpdateProposalOperation {
   daily_pay: Asset | string
   subject: string
   permlink: string
-  extensions: Array<Array<{ end_date: string | Date }>>
+  extensions: Array<[1, { end_date: string | Date }]>
 }
 
 export interface UpdateProposalVotesOperation {

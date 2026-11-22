@@ -5,7 +5,8 @@ import {
   OperationBody,
   TransactionType,
   TransactionStatus,
-  BroadcastResult
+  BroadcastResult,
+  UpdateProposalOperation
 } from './types.js'
 import { ByteBuffer } from './helpers/ByteBuffer.js'
 import { Serializer } from './helpers/serializer.js'
@@ -18,6 +19,34 @@ import { cachedRPC } from './helpers/cachedRPC.js'
 
 /** Chain times are UTC without the "Z" */
 const chainTime = (time: string) => new Date(time + 'Z').getTime()
+
+/** Date objects and strings with a zone ("Z", "+03:30") as chain time; other values unchanged */
+const toChainTime = (time: unknown) =>
+  time instanceof Date || (typeof time === 'string' && /(Z|[+-]\d\d:?\d\d)$/i.test(time))
+    ? new Date(time).toISOString().slice(0, -5)
+    : time
+
+// shortcut: date fields hard-coded as of HF28; update if a hardfork adds one to an operation
+const DATE_FIELDS: Partial<Record<OperationName, string[]>> = {
+  limit_order_create: ['expiration'],
+  limit_order_create2: ['expiration'],
+  escrow_transfer: ['ratification_deadline', 'escrow_expiration'],
+  create_proposal: ['start_date', 'end_date']
+}
+
+/** Copy of `body` with chain time dates: nodes parse the JSON too, so the signed bytes are not enough */
+const withChainTimes = <O extends OperationName>(name: O, body: OperationBody<O>) => {
+  const copy: Record<string, unknown> = { ...body }
+  for (const key of DATE_FIELDS[name] ?? []) copy[key] = toChainTime(copy[key])
+  if (name === 'update_proposal') {
+    const extensions = copy.extensions as UpdateProposalOperation['extensions'] | undefined
+    copy.extensions = extensions?.map(([id, ext]) => [
+      id,
+      { ...ext, end_date: toChainTime(ext.end_date) }
+    ])
+  }
+  return copy as OperationBody<O>
+}
 
 interface TransactionOptions {
   transaction?: TransactionType | Transaction
@@ -65,7 +94,7 @@ export class Transaction {
     if (!this.transaction) {
       await this.createTransaction(this.expiration)
     }
-    this.transaction!.operations.push([operationName, operationBody])
+    this.transaction!.operations.push([operationName, withChainTimes(operationName, operationBody)])
   }
 
   /**
