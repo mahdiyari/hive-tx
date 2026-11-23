@@ -201,6 +201,7 @@ isValidWif(wif): boolean
 isValidPublicKey(key): boolean
 getKeyRole(account, publicKey): Promise&lt;'owner' | 'active' | 'posting' | 'memo' | null&gt;
 signMessage(message, privateKey): string
+signImage(image, privateKey): string
 verifyMessage(account, message, signature, role?): Promise&lt;boolean&gt;
 
 // App authority: role is 'posting' (default) or 'active'
