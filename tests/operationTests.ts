@@ -197,11 +197,6 @@ const operationSamples: { [key: string]: any } = {
     account: 'testuser',
     decline: false
   },
-  reset_account: {
-    reset_account: 'alice',
-    account_to_reset: 'testuser',
-    new_owner_authority: testAuthority
-  },
   set_reset_account: {
     account: 'testuser',
     current_reset_account: 'alice',
@@ -355,7 +350,10 @@ const skipOperations = [
   'pow2',
   'report_over_production',
   'custom_binary',
-  'witness_block_approve'
+  'witness_block_approve',
+  // Nodes reject reset_account as an invalid operation name. Replace it with a sample of the
+  // operation that replaces it once that is released.
+  'reset_account'
 ]
 
 const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))

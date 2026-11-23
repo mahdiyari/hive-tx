@@ -93,6 +93,16 @@ export const getKeyRole = async (
 export const signMessage = (message: string, privateKey: PrivateKey): string =>
   privateKey.sign(sha256(utf8ToBytes(message))).customToString()
 
+const IMAGE_CHALLENGE = utf8ToBytes('ImageSigningChallenge')
+
+/**
+ * Signs an image for upload to an imagehoster such as images.hive.blog: the SHA-256 of
+ * `ImageSigningChallenge` followed by the file bytes. Upload the file as the `file` form field
+ * to `POST https://images.hive.blog/<username>/<signature>`. Use the account's posting key.
+ */
+export const signImage = (image: Uint8Array, privateKey: PrivateKey): string =>
+  privateKey.sign(sha256.create().update(IMAGE_CHALLENGE).update(image).digest()).customToString()
+
 /**
  * True if `signature` signs `message` with a key that can sign alone for the `role` authority
  * of `account`. Checks signatures from `signMessage`, Hive Keychain `requestSignBuffer`, and

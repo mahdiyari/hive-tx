@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto'
 import { isDeepStrictEqual } from 'node:util'
 import {
   Transaction,
@@ -601,6 +602,19 @@ export const coverageTests = async () => {
       !(await utils.verifyMessage(appAccount, message + '!', signature)) &&
       !(await utils.verifyMessage(appAccount, message, signature, 'active')) &&
       !(await utils.verifyMessage(appAccount, message, 'junk'))
+    )
+  })
+
+  await runTest('utils.signImage', () => {
+    const posting = PrivateKey.fromLogin('alice', 'P5Kexample', 'posting')
+    const image = new Uint8Array([0x89, 0x50, 0x4e, 0x47, 0, 255])
+    const signature = utils.signImage(image, posting)
+    // The hash imagehoster computes: sha256 of the challenge, then the file bytes
+    const hash = createHash('sha256').update('ImageSigningChallenge').update(image).digest()
+    return (
+      signature.length === 130 &&
+      Signature.from(signature).getPublicKey(hash).toString() ===
+        posting.createPublic().toString()
     )
   })
 

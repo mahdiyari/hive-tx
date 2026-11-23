@@ -122,6 +122,22 @@ await utils.verifyMessage('alice', message, signature, 'active')  // active key
 const signature = utils.signMessage(message, PrivateKey.from('5J...posting-key'))
 await utils.getKeyRole('alice', publicKey)  // 'owner' | 'active' | 'posting' | 'memo' | null</code></pre>
 <p>Keep the message on your server with a one-time value, and accept each signature once. The key must be able to sign alone for that authority. <code>getKeyRole</code> tells which role a key holds, for logins with a private key or a master password.</p>
+<h2>Image uploads</h2>
+<p>images.hive.blog takes an image signed with the uploader's posting key. <code>signImage</code> makes that signature.</p>
+<pre><code class="language-javascript">import { readFile } from 'node:fs/promises'
+
+const account = 'alice'
+const postingKey = PrivateKey.from('5J...alice-posting-key')
+
+const image = await readFile('photo.jpg')
+const signature = utils.signImage(image, postingKey)
+
+const form = new FormData()
+form.append('file', new Blob([image]), 'photo.jpg')
+const res = await fetch(`https://images.hive.blog/${account}/${signature}`, { method: 'POST', body: form })
+if (!res.ok) throw new Error(await res.text())  // e.g. {"error":{"name":"invalid_signature"}}
+const { url } = await res.json()  // put it in the post body as ![photo](url)</code></pre>
+<p>The account in the URL must be the one whose key signed: with another account's name the server answers <code>invalid_signature</code>. The key must be able to sign alone for that account's posting (or active) authority. images.hive.blog also rate-limits uploads and refuses accounts with low reputation (below 10 in its default config; new accounts start at 25).</p>
 <h2>Comment options</h2>
 <pre><code class="language-javascript">await tx.addOperation('comment', comment)
 await tx.addOperation(...utils.commentOptions('alice', comment.permlink, {
